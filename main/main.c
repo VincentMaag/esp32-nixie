@@ -44,6 +44,7 @@ TaskHandle_t wifi_task_handle = NULL;
 void app_main()
 {
     ESP_LOGI(TAG, "STARTING MAIN");
+
     // =====================================================================
     //Initialize NVS
     // vTaskDelay((1000/portTICK_PERIOD_MS));
