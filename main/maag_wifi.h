@@ -37,7 +37,7 @@ public:
 	~MaagWifi();
     // initialize and start wifi in Access Point (ap) mode
 	esp_err_t init_ap();
-    // initialize and start wifi in Station (sta) mode
+    // initialize and start wifi in Station (sta) mode. Will try to connect to configured AP
 	esp_err_t init_sta();
     // Stop wifi
 	esp_err_t stop_wifi();

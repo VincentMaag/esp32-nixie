@@ -27,7 +27,19 @@
 				"icon": "terminal-cmd"
 			},
 		},
-		
+
+		// "autofold.default": 0,
+		// "autofold.pack": false,
+		// "autofold.types": [
+		// 	{ "ext": ".js", "level": 2 },
+		// 	{ "ext": ".c", "level": 2 },
+		// 	{ "ext": ".cs", "level": 2 },
+		// 	{ "ext": ".conf.php", "level": 2 },
+		// 	{ "ext": ".php", "level": 2 },
+		// 	{ "ext": ".cpp", "level": 2 }
+		// ],
+
+
 		"files.associations": {
 			"ledc.h": "c",
 			"websocket_server.h": "c",
@@ -113,7 +125,12 @@
 			"streambuf": "cpp",
 			"thread": "cpp",
 			"typeinfo": "cpp",
-			"variant": "cpp"
+			"variant": "cpp",
+			"fb_wifi.h": "c"
 		}
 	}
 }
+
+
+
+

@@ -9,31 +9,28 @@
 
 
 */
+
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 // #include "freertos/queue.h"
 // #include "esp_system.h"
-
 #include "lwip/ip4_addr.h"
 #include "tcpip_adapter.h"
-
 #include "lwip/sys.h"
 #include "lwip/api.h"
 // #include "http_parser.h"
-
 #include "maag_wifi.h"
 
-// toDo: this goes into class
+// toDo: this might want to go into class
 static const char *TAG = "maag_wifi";
 
-// toDo: maybe this is elegant if it stays here
+// toDo: maybe this is more elegant if it stays here
 #define EXAMPLE_ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_MAX_STA_CONN CONFIG_MAX_STA_CONN
 
-// static variables. We must instanciate them here because of linking!
+// static variables of class. We must instanciate them here because of linking!
 bool MaagWifi::bConnectionStatus = false;
 
 // =====================================================================
@@ -41,18 +38,14 @@ bool MaagWifi::bConnectionStatus = false;
 
 MaagWifi::MaagWifi(/* args */)
 {
-
 	maagWifi_event_group = xEventGroupCreate();
-
 	bConnectionStatus = false;
-
 	// set default values
 	sIPAdress = "192.168.0.1";
 	sGWAdress = "192.168.0.1";
 	sNMAdress = "255.255.255.0";
 	sSSID = "DEFAULT_ESP32";
 	sPW = "mypassword";
-
 	ESP_LOGI(TAG, "MaagWifi instance created");
 }
 
@@ -163,13 +156,11 @@ esp_err_t MaagWifi::init_sta()
 	IpInfo.gw.addr = ipaddr_addr(sGWAdress.c_str());
 	IpInfo.netmask.addr = ipaddr_addr(sNMAdress.c_str());
 	ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &IpInfo));
-
-	//
+	// configure default sta-params
 	wifi_config_t sta_config = {};
 	strcpy((char *)sta_config.sta.ssid, sSSID.c_str());
 	strcpy((char *)sta_config.sta.password, sPW.c_str());
 	sta_config.sta.bssid_set = false;
-
 	// do not think next is needed...
 	if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0)
 	{
@@ -182,7 +173,8 @@ esp_err_t MaagWifi::init_sta()
 	ESP_LOGW(TAG, "Configured ESP with SSID: %s, PASSWORD: %s, IP: %s", sta_config.sta.ssid, sta_config.sta.password, sIPAdress.c_str());
 	// start wifi (maybe not needed, because done in main of wifi)
 	ESP_ERROR_CHECK(esp_wifi_start());
-	ESP_LOGI(TAG, "started wifi in sta mode. Trying once to connect...");
+	ESP_LOGI(TAG, "started wifi in sta mode. Trying connect...");
+	ESP_ERROR_CHECK(esp_wifi_connect());
 	// later maybe we will want to check for some errors?
 	return ESP_OK;
 }
@@ -192,19 +184,18 @@ void MaagWifi::wifi_try_connect_sta()
 
 	for (int i = 0; i < 20; i++)
 	{
-		ESP_LOGE(TAG, "try to disconnect wifi connection");
+		ESP_LOGW(TAG, "trying to disconnect any wifi connection");
 		ESP_ERROR_CHECK(esp_wifi_disconnect());
-		ESP_LOGE(TAG, "disconnecting...");
+		ESP_LOGW(TAG, "disconnecting...");
 		vTaskDelay((2000 / portTICK_PERIOD_MS));
-		ESP_LOGE(TAG, "trying to connect to router");
+		ESP_LOGW(TAG, "trying to connect to ap");
 		ESP_ERROR_CHECK(esp_wifi_connect());
-		ESP_LOGE(TAG, "connecting... ");
-		vTaskDelay((20000 / portTICK_PERIOD_MS));
-		// vTaskDelay((5000));
+		ESP_LOGW(TAG, "connecting... ");
+		vTaskDelay((5000 / portTICK_PERIOD_MS));
 
 		if (bConnectionStatus)
 		{
-			ESP_LOGE(TAG, "event handler signaling successful connection");
+			ESP_LOGI(TAG, "event handler signaling successful connection");
 			break;
 		}
 		else if (i == 19)
