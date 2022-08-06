@@ -1,5 +1,6 @@
-set(COMPONENT_SRCS "main.cpp"
-                )
+set(COMPONENT_SRCS  "main.cpp"
+                    "maag_wifi.cpp"
+                    )
 
 set(COMPONENT_ADD_INCLUDEDIRS ".")
 
