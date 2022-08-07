@@ -5,6 +5,7 @@
 #ifndef __NIXIE_WEBSERVER_H__
 #define __NIXIE_WEBSERVER_H__
 
+
 #include "maag_webserver.h"
 
 // data structure for nixie webserver data
@@ -36,8 +37,6 @@ public:
     uint16_t getCommunicationCounter(){
         return _data._ui16HttpRequestCounter;
     }
-
-
 };
 
 

@@ -48,6 +48,8 @@
 // #include "maag_webserver.h"
 #include "nixie_webserver.h"
 
+#include "nixie_testClass.h"
+
 
 static const char *TAG = "main";
 
@@ -79,8 +81,9 @@ extern "C" void app_main()
     // MaagWebserver webserver;
     // webserver.createServer();
 
-    NixieWebserver webserver;
-    webserver.createServer();
+    NixieWebserver webserver;                               // create webserver object
+    webserver.setHttpServeFunc(webserver.nixie_http_serve); // define which http_serve function is used
+    webserver.createServer(0);                               // start webserver --> create freRtos tasks
 
     //webserver.http_serve();
     
@@ -90,7 +93,15 @@ extern "C" void app_main()
     // create all user tasks
     //ESP_LOGI(TAG, "Creating Webserver Test-Task");
     // wifi
-    //xTaskCreatePinnedToCore(maag_webserver_task, "maag_webserver_task", 4096, (void *)0, 5, NULL, 0);
+
+    MyTestClass myTestClass;
+    
+    
+
+
+    xTaskCreatePinnedToCore(myTestClass.freeRtosTask , "test_class", 4096, &myTestClass.arg, 5, NULL, 0);
+    
+    
     // ...
 
 

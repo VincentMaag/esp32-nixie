@@ -70,3 +70,4 @@ C:/esp-proj/esp32-nixie/build/esp-idf/spiffs/libspiffs.a
 C:/esp-proj/esp32-nixie/build/esp-idf/ulp/libulp.a
 C:/esp-proj/esp32-nixie/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 C:/esp-proj/esp32-nixie/build/esp-idf/main/libmain.a
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_wifi/libmaag_wifi.a

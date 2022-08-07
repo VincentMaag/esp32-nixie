@@ -17,6 +17,10 @@
 #include "nvs_flash.h"
 #include "tcpip_adapter.h"
 
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include "lwip/api.h"
+
 #include "nixie_webserver.h"
 
 
@@ -26,24 +30,22 @@ nixie_webserver_data_t NixieWebserver::_data;
 // =============================================================================================================
 // CLASS NixieWebserver
 // =============================================================================================================
+
 NixieWebserver::NixieWebserver(/* args */)
 {
-	// set http_server function
-	setHttpServeFunc(nixie_http_serve);
 	// init data
 	_data._ui16HttpRequestCounter = 0;
 	// init all user data here
 	// ...
 
 
-
 	ESP_LOGI(TAG, "NixieWebserver instance created");
 }
+
 NixieWebserver::~NixieWebserver()
 {
 	ESP_LOGE(TAG, "NixieWebserver instance destroid");
 }
-
 
 
 // nixie-specific implementation of http_server

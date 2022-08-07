@@ -1,11 +1,6 @@
-set(COMPONENT_SRCS  "main.cpp"
-                    "maag_wifi.cpp"
-                    "maag_webserver.cpp"
-                    "nixie_webserver.cpp"
-                    )
+# include all c/cpp files in main-directory here:
 
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
-
-
+idf_component_register(SRCS "main.cpp"
+                            "nixie_webserver.cpp"
+                            "nixie_testClass.cpp"
+                            INCLUDE_DIRS ".")
