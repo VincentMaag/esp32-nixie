@@ -26,19 +26,25 @@ class MaagWebserver
 private:
     const char *TAG = "maag_webserver_class";
 
+    // server & handel task, gracefully copied thanks to the internet ;)
+    static void server_task(void *pvParameters);
+    static void server_handle_task(void *pvParameters);
+    // default http_serve function. Will be set as default and must be overwritten by a user-defined, project-specific function
+    static void default_http_serve(struct netconn *conn);
+    // a default argument for default_http_serve
+    //bool bDefaultArg;
+
 public:
     MaagWebserver(/* args */);
     ~MaagWebserver();
 
-    // set http_server function which will handle http POST/GET requests
+    // set http_server function which will handle http POST/GET requests. Pass the desired function pointer
     void setHttpServeFunc(http_serve_function pHttpServeFunc);
 
-    // create and start the http server
-    // xCoreID = desired core number (0 or 1)
+    // create and start the http server on the desired Core (0 or 1)
     void createServer(BaseType_t xCoreID);
 
-    // default http_serve function. Will be set as defautl and must be overwritten by a user-defined, project-specific function
-    static void default_http_serve(struct netconn *conn);
+    
 };
 
 #endif /* __MAAG_WEBSERVER_H__ */

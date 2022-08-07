@@ -81,13 +81,10 @@ extern "C" void app_main()
     // MaagWebserver webserver;
     // webserver.createServer();
 
-    NixieWebserver webserver;                               // create webserver object
-    webserver.setHttpServeFunc(webserver.nixie_http_serve); // define which http_serve function is used
-    webserver.createServer(0);                               // start webserver --> create freRtos tasks
+    NixieWebserver webserver;                                   // create webserver object
+    webserver.setHttpServeFunc(webserver.nixie_http_serve);     // define which http_serve function is used. this could be solved more elegantly than passing something to to object that is in the object...
+    webserver.createServer(0);                                  // start webserver --> create freRtos tasks
 
-    //webserver.http_serve();
-    
-    // webserver.
 
     // =====================================================================
     // create all user tasks
@@ -95,8 +92,6 @@ extern "C" void app_main()
     // wifi
 
     MyTestClass myTestClass;
-    
-    
 
 
     xTaskCreatePinnedToCore(myTestClass.freeRtosTask , "test_class", 4096, &myTestClass.arg, 5, NULL, 0);
@@ -118,6 +113,11 @@ extern "C" void app_main()
                 wifi.wifi_try_connect_sta();
             }
         }
+
+        // don't do this because the freeRtos task is a while loop ;)
+        // ESP_LOGW(TAG, "CALLING FREERTOS_TASK IN A WHILE LOOP");
+        // myTestClass.freeRtosTask(&myTestClass.arg);
+
 
 
         // ESP_LOGW(TAG, "current webserver requests: %i",webserver.getCommunicationCounter());

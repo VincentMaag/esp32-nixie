@@ -26,9 +26,12 @@
 
 // static const char *TAG = "maag_webserver";
 
+
+// ToDo: somehow get these variables into class cope...
 static QueueHandle_t client_queue;
 const static int client_queue_size = 10;
 
+// ToDo: get this variable into class scope too...
 static http_serve_function httpServeFunc; // variable to store function pointer type
 
 // =============================================================================================================
@@ -38,7 +41,8 @@ static http_serve_function httpServeFunc; // variable to store function pointer 
 // with class functions. Still working on that though...
 
 // handles clients when they first connect. passes to a queue
-static void server_task(void *pvParameters)
+// static void server_task(void *pvParameters)
+void MaagWebserver::server_task(void *pvParameters)
 {
 	const static char *TAG2 = "server_task";
 	struct netconn *conn, *newconn;
@@ -67,7 +71,8 @@ static void server_task(void *pvParameters)
 	esp_restart();
 }
 // receives clients from queue, handles them
-static void server_handle_task(void *pvParameters)
+// static void server_handle_task(void *pvParameters)
+void MaagWebserver::server_handle_task(void *pvParameters)
 {
 	const static char *TAG2 = "server_handle_task";
 	struct netconn *conn;
@@ -78,7 +83,7 @@ static void server_handle_task(void *pvParameters)
 		if (!conn)
 			continue;
 		// http_serve(conn);
-		// call user http_server function
+		// call user http_server function here:
 		httpServeFunc(conn);
 	}
 	vTaskDelete(NULL);
@@ -89,7 +94,7 @@ static void server_handle_task(void *pvParameters)
 // =============================================================================================================
 MaagWebserver::MaagWebserver(/* args */)
 {
-	ESP_LOGI(TAG, "MaagWebserver instance created");
+	ESP_LOGI(TAG, "MaagWebserver instance created, setting default http_serve function...");
 	setHttpServeFunc(default_http_serve);
 }
 
@@ -106,14 +111,14 @@ void MaagWebserver::setHttpServeFunc(http_serve_function pHttpServeFunc)
 
 void MaagWebserver::createServer(BaseType_t xCoreID)
 {
+	ESP_LOGI(TAG, "Creating server_task and server_handle_task...");
 	if(xCoreID > 1 || xCoreID < 0){
 		ESP_LOGE(TAG, "Invalid Core ID. Setting to default (Core 0)");
 		xCoreID = 0;
 	}
-	// create both needed tasks for http webserver
-	// ToDo: pass wanted core as a parameters
-	xTaskCreatePinnedToCore(&server_task, "server_task", 3000, NULL, 5, NULL, xCoreID);
-	xTaskCreatePinnedToCore(&server_handle_task, "server_handle_task", 4000, NULL, 5, NULL, xCoreID);
+	// create the two tasks needed for http webserver
+	xTaskCreatePinnedToCore(server_task, "server_task", 3000, NULL, 5, NULL, xCoreID);
+	xTaskCreatePinnedToCore(server_handle_task, "server_handle_task", 4000, NULL, 5, NULL, xCoreID);
 }
 
 void MaagWebserver::default_http_serve(struct netconn *conn)
