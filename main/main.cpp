@@ -1,8 +1,8 @@
 /*
     
-    - create components folder, put all maag_xyz stuff in there. don't forget to correct CMakeLists!
+
     - cleanup all cpp files etc. with comments etc.
-    - add cpu core number to wifi (not sure) and webserver stuff
+
     - add wifi.activateAutoConnect() --> this will create a task that tries to reconnect if disconnected
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
@@ -24,10 +24,6 @@
 
 
 */
-
-
-
-
 
 
 #include <string.h>
@@ -79,23 +75,38 @@ extern "C" void app_main()
     // =====================================================================
     // webserver object
     // MaagWebserver webserver;
-    // webserver.createServer();
+    // webserver.createServer(0);
 
-    NixieWebserver webserver;                                   // create webserver object
-    webserver.setHttpServeFunc(webserver.nixie_http_serve);     // define which http_serve function is used. this could be solved more elegantly than passing something to to object that is in the object...
-    webserver.createServer(0);                                  // start webserver --> create freRtos tasks
+    NixieWebserver webserver;      // create webserver object
+    webserver.createServer(0);     // start webserver --> create freRtos tasks
 
 
     // =====================================================================
-    // create all user tasks
-    //ESP_LOGI(TAG, "Creating Webserver Test-Task");
-    // wifi
-
-    MyTestClass myTestClass;
-
-
-    xTaskCreatePinnedToCore(myTestClass.freeRtosTask , "test_class", 4096, &myTestClass.arg, 5, NULL, 0);
+    // Testobject
+    //MyTestClass myTestClass;
+    //xTaskCreatePinnedToCore(myTestClass.freeRtosTask , "test_class", 4096, &myTestClass.arg, 5, NULL, 0);
     
+
+
+
+    /* we want these tasks for nixie:
+        - wifi, these tasks are created via object (not exactly sure where though...). We can restart stuff via the object
+        - webserver, these tasks are created via object, server defined in http_server_task
+        - I2C, this task will be created in the object. Handling in/out-data will be done in the task. We can use get/set functions of the object
+        - flash memory: we will create a class to handle memory stuff more elegantly! no need for a task, this will be method-driven only
+        - MainStateMachine that will handle all the objects etc. I want to create a MainStateMachine-Class that creates all the tasks via the objects.
+            --> we will see if this works. Try to create a MainClass with "class-members" (wifi, webserver etc). See if we can get all to work. Else
+            we will have to create the objects here in main and then pass some references.
+
+
+
+    */
+
+
+    // =====================================================================
+    // Pass all objects as reference (or pointers lol) to main state machine
+    
+
     
     // ...
 
@@ -120,7 +131,7 @@ extern "C" void app_main()
 
 
 
-        // ESP_LOGW(TAG, "current webserver requests: %i",webserver.getCommunicationCounter());
+        ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
 
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }

@@ -1,5 +1,6 @@
 /*
-	...
+	ToDo: 	- pack all the local variables into the class--> they are static ones, so we must re-declare them in this file!
+			- get rid of all unnecessary inludes
 
 */
 #include <string.h>
@@ -26,7 +27,6 @@
 
 // static const char *TAG = "maag_webserver";
 
-
 // ToDo: somehow get these variables into class cope...
 static QueueHandle_t client_queue;
 const static int client_queue_size = 10;
@@ -42,7 +42,7 @@ static http_serve_function httpServeFunc; // variable to store function pointer 
 
 // handles clients when they first connect. passes to a queue
 // static void server_task(void *pvParameters)
-void MaagWebserver::server_task(void *pvParameters)
+void MaagWebserver::server_task(void *pArgs)
 {
 	const static char *TAG2 = "server_task";
 	struct netconn *conn, *newconn;
@@ -72,7 +72,7 @@ void MaagWebserver::server_task(void *pvParameters)
 }
 // receives clients from queue, handles them
 // static void server_handle_task(void *pvParameters)
-void MaagWebserver::server_handle_task(void *pvParameters)
+void MaagWebserver::server_handle_task(void *pArgs)
 {
 	const static char *TAG2 = "server_handle_task";
 	struct netconn *conn;
@@ -83,8 +83,8 @@ void MaagWebserver::server_handle_task(void *pvParameters)
 		if (!conn)
 			continue;
 		// http_serve(conn);
-		// call user http_server function here:
-		httpServeFunc(conn);
+		// call user http_server function here. Also pass user arguments, which where passed at task creation
+		httpServeFunc(conn, pArgs);
 	}
 	vTaskDelete(NULL);
 }
@@ -94,8 +94,10 @@ void MaagWebserver::server_handle_task(void *pvParameters)
 // =============================================================================================================
 MaagWebserver::MaagWebserver(/* args */)
 {
-	ESP_LOGI(TAG, "MaagWebserver instance created, setting default http_serve function...");
-	setHttpServeFunc(default_http_serve);
+	ESP_LOGW(TAG, "MaagWebserver instance created, setting default http_serve function & arguments...");
+	iDefaultArg_ = 0;					  		// init a default parameter
+	setHttpServeArgs((void *)&iDefaultArg_);	// set our parameter pointer to a default location
+	setHttpServeFunc(default_http_serve); 		// set our http_serve function pointer to default http_serve function
 }
 
 MaagWebserver::~MaagWebserver()
@@ -105,25 +107,37 @@ MaagWebserver::~MaagWebserver()
 
 void MaagWebserver::setHttpServeFunc(http_serve_function pHttpServeFunc)
 {
-	ESP_LOGW(TAG, "setting http_server function");
+	ESP_LOGI(TAG, "setting http_server function pointer");
 	httpServeFunc = pHttpServeFunc;
+}
+
+void MaagWebserver::setHttpServeArgs(void *pHttpServeArgs)
+{
+	ESP_LOGI(TAG, "setting http_server argument pointer");
+	pHttp_serve_args_ = pHttpServeArgs;
 }
 
 void MaagWebserver::createServer(BaseType_t xCoreID)
 {
 	ESP_LOGI(TAG, "Creating server_task and server_handle_task...");
-	if(xCoreID > 1 || xCoreID < 0){
+	if (xCoreID > 1 || xCoreID < 0)
+	{
 		ESP_LOGE(TAG, "Invalid Core ID. Setting to default (Core 0)");
 		xCoreID = 0;
 	}
 	// create the two tasks needed for http webserver
 	xTaskCreatePinnedToCore(server_task, "server_task", 3000, NULL, 5, NULL, xCoreID);
-	xTaskCreatePinnedToCore(server_handle_task, "server_handle_task", 4000, NULL, 5, NULL, xCoreID);
+	// we must pass our http_server arguments here because http_server function is called in this created task
+	xTaskCreatePinnedToCore(server_handle_task, "server_handle_task", 4000, pHttp_serve_args_, 5, NULL, xCoreID);
 }
 
-void MaagWebserver::default_http_serve(struct netconn *conn)
+void MaagWebserver::default_http_serve(struct netconn *conn, void *pArgs)
 {
 	const static char *TAG2 = "default_http_serve";
+
+	// convert our passed arguments back to what we know they are. In this default case it is an int
+	int *pPassedArgs = (int *)pArgs;
+
 	// const static char HTML_HEADER[] = "HTTP/1.1 200 OK\nContent-type: text/html\n\n";
 
 	const static char HTML_HEADER[] = "HTTP/1.1 200 OK\nAccess-Control-Allow-Origin: *\nContent-type: text/html\n\n";
@@ -170,6 +184,10 @@ void MaagWebserver::default_http_serve(struct netconn *conn)
 		netbuf_data(inbuf, (void **)&buf, &buflen);
 		if (buf)
 		{
+			// increment testdata and log
+			(*pPassedArgs)++;
+			ESP_LOGW(TAG2, "Current Communication Count with default webserver: %i", *pPassedArgs);
+
 			// print the whole request for debugging purposes
 
 			// printf("\n\n%s\n",buf);
@@ -244,5 +262,3 @@ void MaagWebserver::default_http_serve(struct netconn *conn)
 		netbuf_delete(inbuf);
 	}
 }
-
-

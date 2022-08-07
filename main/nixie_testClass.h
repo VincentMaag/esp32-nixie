@@ -19,7 +19,7 @@ typedef struct{
 class MyTestClass
 {
 private:
-    const char *TAG = "nixie_webserver_class";
+    const char *TAG = "nixie_test_class";
     
     static int iAStaticLocalVariable;
 

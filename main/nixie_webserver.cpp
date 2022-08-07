@@ -24,22 +24,21 @@
 #include "nixie_webserver.h"
 
 
-nixie_webserver_data_t NixieWebserver::_data;
-
-
 // =============================================================================================================
 // CLASS NixieWebserver
 // =============================================================================================================
 
 NixieWebserver::NixieWebserver(/* args */)
 {
+	ESP_LOGW(TAG, "NixieWebserver instance created, setting specific http_serve function & arguments...");
 	// init data
-	_data._ui16HttpRequestCounter = 0;
+	data_.ui16HttpRequestCounter = 0;
 	// init all user data here
 	// ...
-
-
-	ESP_LOGI(TAG, "NixieWebserver instance created");
+	
+	// point function and arguments in the right direction
+	setHttpServeArgs((void *)&data_);
+	setHttpServeFunc(nixie_http_serve);
 }
 
 NixieWebserver::~NixieWebserver()
@@ -49,11 +48,15 @@ NixieWebserver::~NixieWebserver()
 
 
 // nixie-specific implementation of http_server
-void NixieWebserver::nixie_http_serve(struct netconn *conn)
+void NixieWebserver::nixie_http_serve(struct netconn *conn, void *pArgs)
 {
 	const static char *TAG2 = "nixie_http_serve";
+
+	// get our arguments and cast them to what we know they are:
+	nixie_webserver_data_t *pPassedArgs = (nixie_webserver_data_t *)pArgs;
+
 	// communication count
-	_data._ui16HttpRequestCounter++;
+	pPassedArgs->ui16HttpRequestCounter++;
 
 	const static char HTML_HEADER[] = "HTTP/1.1 200 OK\nAccess-Control-Allow-Origin: *\nContent-type: text/html\n\n";
 	const static char JS_HEADER[] = "HTTP/1.1 200 OK\nContent-type: text/javascript\n\n";
