@@ -8,6 +8,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "lwip/api.h"
+#include "freertos/queue.h"
 
 // http_serve function type. Needed to pass function pointers, not quite sure how this works actually :)
 typedef void (*http_serve_function)(struct netconn *conn, void *pArgs);
@@ -18,22 +19,28 @@ typedef void (*http_serve_function)(struct netconn *conn, void *pArgs);
 // Inherite this class and define a user specific http_serve member function. Something like:
 //
 // 1. create user class NixieWebserver : public MaagWebserver
-// 2. define a static void xyz_http_serve(struct netconn *conn) function in user class
-// 3. define user parameters used in xyz_http_serve()
-// 4. initialize in a main: NixieWebserver webserver; webserver.setHttpServeFunc(webserver.nixie_http_serve); webserver.createServer();
+// 2. define a static void user_http_serve(struct netconn *conn) function in user class, SET this function with setHttpServeFunc(). Example: setHttpServeFunc(default_http_serve); 
+// 3. define user arguments (as a typedef), pass this pointer with setHttpServeArgs(). Example: setHttpServeArgs((void *)&iDefaultArg_);
+// --> Pro tip: do this in the constructor of inherited class
+// 4. initialize in a main. Example: NixieWebserver webserver; webserver.createServer();
 class MaagWebserver
 {
 private:
-    const char *TAG = "maag_webserver_class";
-    // server & handel task, gracefully copied thanks to the internet ;)
+    // server & handel task, gracefully copied thanks to the internet ;) These have to be static because they are going to be FreeRtos Tasks,
+    // which may not be non-static member functions
     static void server_task(void *pArgs);
     static void server_handle_task(void *pArgs);
     // default http_serve function. Will be set as default and must be overwritten by a user-defined, project-specific function
     static void default_http_serve(struct netconn *conn, void *pArgs);
+    // variable to store function pointer type
+    static http_serve_function httpServeFunc; 
     // pointer for our http_serve function arguments
-    void *pHttp_serve_args_;
+    static void *m_pHttp_serve_args;
     // a default argument for default_http_serve
-    int iDefaultArg_;
+    static int m_iDefaultArg;
+    // some event queue stuff
+    static QueueHandle_t m_client_queue;
+    static const int m_client_queue_size;
 
 public:
     MaagWebserver(/* args */);

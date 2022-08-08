@@ -132,6 +132,7 @@ extern "C" void app_main()
 
 
         ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
+        // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.);
 
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }

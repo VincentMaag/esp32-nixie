@@ -20,18 +20,18 @@
 class MaagWifi
 {
 private:
-	// event handling and connection status
-    EventGroupHandle_t maagWifi_event_group;
-    // event handler. must be static bcause. Don't understand it yet but i guess it will become clearer in future :)
+    // static event handler. Has to be static because of how it is called in esp-idf functions
     static esp_err_t event_handler(void *ctx, system_event_t *event);
     // connection status. Must be static because it is passed by static event handler
-    static bool bConnectionStatus;
+    static bool m_bConnectionStatus;
+	// event handling and connection status
+    EventGroupHandle_t m_maagWifi_event_group;
     // string stuff
-    std::string sIPAdress;
-    std::string sGWAdress;
-    std::string sNMAdress;
-    std::string sSSID;
-    std::string sPW;
+    std::string m_sIPAdress;
+    std::string m_sGWAdress;
+    std::string m_sNMAdress;
+    std::string m_sSSID;
+    std::string m_sPW;
 public:
 	MaagWifi(/* args */);
 	~MaagWifi();
@@ -58,9 +58,5 @@ public:
     // set password
     void setPW(std::string sPW_);
 };
-
-
-void maag_wifi_task(void* arg);
-
 
 #endif /* __MAAG_WIFI_H__ */

@@ -16,13 +16,17 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "tcpip_adapter.h"
-
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "lwip/api.h"
 
 #include "nixie_webserver.h"
 
+// static TAG
+static const char *TAG = "nixie_webserver";
+
+// static member variables
+nixie_webserver_data_t NixieWebserver::m_data;
 
 // =============================================================================================================
 // CLASS NixieWebserver
@@ -32,12 +36,12 @@ NixieWebserver::NixieWebserver(/* args */)
 {
 	ESP_LOGW(TAG, "NixieWebserver instance created, setting specific http_serve function & arguments...");
 	// init data
-	data_.ui16HttpRequestCounter = 0;
+	m_data.ui16HttpRequestCounter = 0;
 	// init all user data here
 	// ...
 	
 	// point function and arguments in the right direction
-	setHttpServeArgs((void *)&data_);
+	setHttpServeArgs((void *)&m_data);
 	setHttpServeFunc(nixie_http_serve);
 }
 

@@ -18,12 +18,10 @@ typedef struct{
 class NixieWebserver : public MaagWebserver
 {
 private:
-    const char *TAG = "nixie_webserver_class";
-    //    
     // Nixie-specific http_server
     static void nixie_http_serve(struct netconn *conn, void *pArgs);
-    // User data for nixie webserver
-    nixie_webserver_data_t data_;
+    // User data for nixie webserver, which is best made static
+    static nixie_webserver_data_t m_data;
 
 public:
     // set nixie http_server here
@@ -32,11 +30,11 @@ public:
 
     // get all data
     nixie_webserver_data_t getdata(){
-        return data_;
+        return m_data;
     }
     // get communication counter
     uint16_t getCommunicationCounter(){
-        return data_.ui16HttpRequestCounter;
+        return m_data.ui16HttpRequestCounter;
     }
 
 };
