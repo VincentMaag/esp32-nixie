@@ -1,5 +1,5 @@
 /*
-    
+
 
     - cleanup all cpp files etc. with comments etc.
 
@@ -25,7 +25,6 @@
 
 */
 
-
 #include <string.h>
 #include <string>
 
@@ -39,13 +38,13 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "nixie_projdefs.h"
 #include "maag_wifi.h"
-// #include "maag_webserver.h"
+
+#include "maag_gpio.h"
+
+#include "nixie_projdefs.h"
 #include "nixie_webserver.h"
-
 #include "nixie_testClass.h"
-
 
 static const char *TAG = "main";
 
@@ -77,17 +76,23 @@ extern "C" void app_main()
     // MaagWebserver webserver;
     // webserver.createServer(0);
 
-    NixieWebserver webserver;      // create webserver object
-    webserver.createServer(0);     // start webserver --> create freRtos tasks
-
+    NixieWebserver webserver;  // create webserver object
+    webserver.createServer(0); // start webserver --> create freRtos tasks
 
     // =====================================================================
     // Testobject
-    //MyTestClass myTestClass;
-    //xTaskCreatePinnedToCore(myTestClass.freeRtosTask , "test_class", 4096, &myTestClass.arg, 5, NULL, 0);
-    
+    // MyTestClass myTestClass;
+    // xTaskCreatePinnedToCore(myTestClass.freeRtosTask , "test_class", 4096, &myTestClass.arg, 5, NULL, 0);
 
+    // =====================================================================
+    // GPIO's
+    // EspGpio gpio1(GPIO_NUM_18, GPIO_MODE_INPUT);
+    // EspGpio gpioOut(GPIO_NUM_15, GPIO_MODE_OUTPUT);
+    EspGpio gpioIn(GPIO_NUM_18, GPIO_MODE_INPUT);
+    EspGpio gpioOut(GPIO_NUM_15, GPIO_MODE_INPUT_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
 
+    // gpio1.setOutput(true);
+    // gpio2.setOutput(true);
 
     /* we want these tasks for nixie:
         - wifi, these tasks are created via object (not exactly sure where though...). We can restart stuff via the object
@@ -102,14 +107,11 @@ extern "C" void app_main()
 
     */
 
-
     // =====================================================================
     // Pass all objects as reference (or pointers lol) to main state machine
-    
 
-    
     // ...
-
+    bool bToggle = false;
 
     while (true)
     {
@@ -120,7 +122,8 @@ extern "C" void app_main()
             // wait a bit if we catch a disconnetced esp
             vTaskDelay((5000 / portTICK_PERIOD_MS));
             // if still disconnected, try and connect
-            if(wifi.getConnectionStatus() == false){
+            if (wifi.getConnectionStatus() == false)
+            {
                 wifi.wifi_try_connect_sta();
             }
         }
@@ -129,10 +132,11 @@ extern "C" void app_main()
         // ESP_LOGW(TAG, "CALLING FREERTOS_TASK IN A WHILE LOOP");
         // myTestClass.freeRtosTask(&myTestClass.arg);
 
-
-
-        ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
+        ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioOut.getInput(), bToggle);
         // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.);
+
+        bToggle = !bToggle;
+        gpioOut.setOutput(bToggle);
 
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
