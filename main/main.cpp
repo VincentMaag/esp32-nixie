@@ -1,18 +1,19 @@
 /*
 
 
-    - cleanup all cpp files etc. with comments etc.
 
     - add wifi.activateAutoConnect() --> this will create a task that tries to reconnect if disconnected
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
 
-    (- create framework for I2C)
+    - create framework for I2C
 
     - see how to get time via http request. Do this in maag_wifi.cpp and try to use an example
 
     - gpio.cpp, gpio.h --> set up some neat functions to get status of gpio's --> and setup functions, try to create a class "gpio"!
+        + create base classes for gpio and in/out
+        - put gpio stuff into a package
 
     - get the RTC functionality of stepper.c bla to work in cpp so that we can write stuff
 
@@ -88,8 +89,18 @@ extern "C" void app_main()
     // GPIO's
     // EspGpio gpio1(GPIO_NUM_18, GPIO_MODE_INPUT);
     // EspGpio gpioOut(GPIO_NUM_15, GPIO_MODE_OUTPUT);
-    EspGpio gpioIn(GPIO_NUM_18, GPIO_MODE_INPUT);
-    EspGpio gpioOut(GPIO_NUM_15, GPIO_MODE_INPUT_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
+    // GPIO_MODE_INPUT_OUTPUT
+
+    // EspGpio gpioIn(GPIO_NUM_18, GPIO_MODE_INPUT);
+
+    // EspGpio gpioOut(GPIO_NUM_15, GPIO_MODE_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
+
+    Gpio gpio_1(GPIO_NUM_13, GPIO_MODE_INPUT_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
+
+    GpioInput gpioIn(GPIO_NUM_14);
+
+    GpioOutput gpioOut(GPIO_NUM_15, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
+
 
     // gpio1.setOutput(true);
     // gpio2.setOutput(true);
@@ -132,8 +143,8 @@ extern "C" void app_main()
         // ESP_LOGW(TAG, "CALLING FREERTOS_TASK IN A WHILE LOOP");
         // myTestClass.freeRtosTask(&myTestClass.arg);
 
-        ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioOut.getInput(), bToggle);
-        // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.);
+        ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
+        // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
 
         bToggle = !bToggle;
         gpioOut.setOutput(bToggle);

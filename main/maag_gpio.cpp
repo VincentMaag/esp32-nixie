@@ -31,9 +31,20 @@ static const char *TAG = "esp_gpio";
 // =============================================================================================================
 // CLASS ESPGPIO
 // =============================================================================================================
+Gpio::Gpio()
+{
+}
 
-// constructor if we want to configure completely
-EspGpio::EspGpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type)
+Gpio::Gpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type)
+{
+	configure_gpio(gpio_nr, mode, pull_down_en, pull_up_en, intr_type);
+}
+
+Gpio::~Gpio()
+{
+}
+
+void Gpio::configure_gpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type)
 {
 	// store gpio number
 	m_gpio_nr = gpio_nr;
@@ -46,28 +57,63 @@ EspGpio::EspGpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down
 	io_conf.pull_up_en = pull_up_en;
 	gpio_config(&io_conf);
 }
-// constructor if only number and mode are set
-EspGpio::EspGpio(gpio_num_t gpio_nr, gpio_mode_t mode)
+
+gpio_num_t Gpio::getChannelNr()
 {
-	gpio_config_t io_conf;
-	io_conf.intr_type = GPIO_INTR_DISABLE;
-	io_conf.mode = mode;
-	io_conf.pin_bit_mask = (1ULL << gpio_nr);
-	io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-	io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-	gpio_config(&io_conf);
+	return m_gpio_nr;
 }
 
-EspGpio::~EspGpio()
+// =============================================================================================================
+// CLASS ESPGPIOINPUT
+// =============================================================================================================
+GpioInput::GpioInput()
 {
 }
 
-bool EspGpio::getInput()
+GpioInput::GpioInput(gpio_num_t gpio_nr)
 {
-	return (bool)gpio_get_level(m_gpio_nr);
+	configure_gpio(gpio_nr, GPIO_MODE_INPUT, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
 }
 
-esp_err_t EspGpio::setOutput(bool out_)
+GpioInput::GpioInput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en)
 {
-	return gpio_set_level(m_gpio_nr,(uint32_t)out_);
+	configure_gpio(gpio_nr, GPIO_MODE_INPUT, pull_down_en, pull_up_en, GPIO_INTR_DISABLE);
 }
+
+GpioInput::~GpioInput()
+{
+}
+
+bool GpioInput::getInput(){
+	return (bool)gpio_get_level(Gpio::m_gpio_nr);
+}
+
+// =============================================================================================================
+// CLASS ESPGPIOOUTPUT
+// =============================================================================================================
+GpioOutput::GpioOutput()
+{
+}
+
+GpioOutput::GpioOutput(gpio_num_t gpio_nr)
+{
+	configure_gpio(gpio_nr, GPIO_MODE_OUTPUT, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
+}
+
+GpioOutput::GpioOutput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en)
+{
+	configure_gpio(gpio_nr, GPIO_MODE_OUTPUT, pull_down_en, pull_up_en, GPIO_INTR_DISABLE);
+}
+
+GpioOutput::~GpioOutput()
+{
+}
+
+esp_err_t GpioOutput::setOutput(bool out){
+	return gpio_set_level(Gpio::m_gpio_nr,(uint32_t)out);
+}
+
+
+
+
+
