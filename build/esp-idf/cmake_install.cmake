@@ -122,6 +122,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("C:/esp-proj/esp32-nixie/build/esp-idf/ulp/cmake_install.cmake")
   include("C:/esp-proj/esp32-nixie/build/esp-idf/wifi_provisioning/cmake_install.cmake")
   include("C:/esp-proj/esp32-nixie/build/esp-idf/main/cmake_install.cmake")
+  include("C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/cmake_install.cmake")
   include("C:/esp-proj/esp32-nixie/build/esp-idf/maag_wifi/cmake_install.cmake")
 
 endif()

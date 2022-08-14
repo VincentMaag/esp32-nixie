@@ -670,6 +670,13 @@ C:/esp-proj/esp32-nixie/build/esp-idf/main/CMakeFiles/__idf_main.dir
 C:/esp-proj/esp32-nixie/build/esp-idf/main/CMakeFiles/rebuild_cache.dir
 C:/esp-proj/esp32-nixie/build/esp-idf/main/CMakeFiles/list_install_components.dir
 C:/esp-proj/esp32-nixie/build/esp-idf/main/CMakeFiles/install/strip.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/__idf_maag_lib.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/install/local.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/install.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/edit_cache.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/rebuild_cache.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/list_install_components.dir
+C:/esp-proj/esp32-nixie/build/esp-idf/maag_lib/CMakeFiles/install/strip.dir
 C:/esp-proj/esp32-nixie/build/esp-idf/maag_wifi/CMakeFiles/install/strip.dir
 C:/esp-proj/esp32-nixie/build/esp-idf/maag_wifi/CMakeFiles/__idf_maag_wifi.dir
 C:/esp-proj/esp32-nixie/build/esp-idf/maag_wifi/CMakeFiles/install/local.dir
