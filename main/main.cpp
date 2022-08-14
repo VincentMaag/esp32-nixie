@@ -1,23 +1,27 @@
 /*
 
 
+    - add d3231 class and test with eval board
 
-    - add wifi.activateAutoConnect() --> this will create a task that tries to reconnect if disconnected
+    - create framework for I2C
+
+
+    - add wifi.activateAutoConnect() --> this will create a task that tries to reconnect if disconnected. This task is a xTaskCreate so that it will run indepandantly
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
 
-    - create framework for I2C
 
-    - see how to get time via http request. Do this in maag_wifi.cpp and try to use an example
 
-    - gpio.cpp, gpio.h --> set up some neat functions to get status of gpio's --> and setup functions, try to create a class "gpio"!
+    - put maag_sntp into maag_lib component
+
+    + gpio.cpp, gpio.h --> set up some neat functions to get status of gpio's --> and setup functions, try to create a class "gpio"!
         + create base classes for gpio and in/out
-        - put gpio stuff into a package
+        + put gpio stuff into a component
 
     - get the RTC functionality of stepper.c bla to work in cpp so that we can write stuff
 
-
+    - find out how to turn on optimiziation of compiler and experiment with it
 
 
 THSI IS MAIN BRANCH
@@ -72,6 +76,7 @@ extern "C" void app_main()
     MaagWifi wifi;
     wifi.setIP("192.168.178.140");
     wifi.setGW("192.168.178.1");
+    wifi.setDNS("8.8.8.8");
     wifi.setSSID("FRITZ!Box 5490 WT");
     wifi.setPW("55940362741817360715");
     // maagWifi.init_ap();
@@ -123,6 +128,15 @@ extern "C" void app_main()
     */
 
     // =====================================================================
+    // SNTP
+    MaagSNTP sntp;
+    sntp.initStart();
+    
+    
+    
+    // initialize_sntp_maag();
+
+    // =====================================================================
     // Pass all objects as reference (or pointers lol) to main state machine
 
     // ...
@@ -153,11 +167,11 @@ extern "C" void app_main()
         //bToggle = !bToggle;
         //gpioOut.setOutput(bToggle);
 
-        ESP_LOGW(TAG, "WAITING UNTIL SNTP....");
-        vTaskDelay((5000 / portTICK_PERIOD_MS));
-        ESP_LOGW(TAG, "SNTP!");
+        // ESP_LOGW(TAG, "WAITING UNTIL SNTP....");
 
-        initialize_sntp_maag();
+        // vTaskDelay((5000 / portTICK_PERIOD_MS));
+        
+        // ESP_LOGW(TAG, "SNTP!");
 
 
         vTaskDelay((1000 / portTICK_PERIOD_MS));

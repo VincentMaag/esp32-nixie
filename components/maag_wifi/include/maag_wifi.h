@@ -13,8 +13,6 @@
 #include "freertos/event_groups.h"
 #include "lwip/err.h"
 
-//using namespace std;
-
 // =====================================================================
 // maag_wifi class
 class MaagWifi
@@ -30,6 +28,7 @@ private:
     std::string m_sIPAdress;
     std::string m_sGWAdress;
     std::string m_sNMAdress;
+    std::string m_sDNSAdress;
     std::string m_sSSID;
     std::string m_sPW;
 public:
@@ -53,6 +52,8 @@ public:
     void setGW(std::string sGWAdress_);
     // set netmask
     void setNM(std::string sNMAdress_);
+    // set DNS
+    void setDNS(std::string sDNSAdress_);
     // set ssid
     void setSSID(std::string sSSID_);
     // set password

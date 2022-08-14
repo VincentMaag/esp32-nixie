@@ -39,6 +39,7 @@ MaagWifi::MaagWifi(/* args */)
 	m_sIPAdress = "192.168.0.1";
 	m_sGWAdress = "192.168.0.1";
 	m_sNMAdress = "255.255.255.0";
+	m_sDNSAdress = "8.8.8.8";
 	m_sSSID = "DEFAULT_ESP32";
 	m_sPW = "mypassword";
 	ESP_LOGI(TAG, "MaagWifi instance created");
@@ -149,28 +150,16 @@ esp_err_t MaagWifi::init_sta()
 	IpInfo.gw.addr = ipaddr_addr(m_sGWAdress.c_str());
 	IpInfo.netmask.addr = ipaddr_addr(m_sNMAdress.c_str());
 	ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &IpInfo));
-
-	// trying to set dns info...
-	tcpip_adapter_dns_info_t dns_info = {0};
+	// DNS parameters, used if we need to acces the internet!
+	tcpip_adapter_dns_info_t dns_info; // = {0};
 	dns_info.ip.type = IPADDR_TYPE_V4;
-	IP4_ADDR(&dns_info.ip.u_addr.ip4, 8, 8, 8, 8);
-	//dns_info.ip.u_addr = ipaddr_addr("8.8.8.8");
-	tcpip_adapter_set_dns_info(TCPIP_ADAPTER_IF_STA, ESP_NETIF_DNS_MAIN, &dns_info);
-
-
-
+	dns_info.ip.u_addr.ip4.addr = ipaddr_addr(m_sDNSAdress.c_str());
+	ESP_ERROR_CHECK(tcpip_adapter_set_dns_info(TCPIP_ADAPTER_IF_STA, ESP_NETIF_DNS_MAIN, &dns_info));
 	// configure default sta-params
 	wifi_config_t sta_config = {};
 	strcpy((char *)sta_config.sta.ssid, m_sSSID.c_str());
 	strcpy((char *)sta_config.sta.password, m_sPW.c_str());
 	sta_config.sta.bssid_set = false;
-
-
-	// do not think next is needed...
-	// if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0)
-	// {
-	// 	sta_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
-	// }
 	// set sta mode & config
 	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
@@ -233,6 +222,11 @@ void MaagWifi::setGW(std::string sGWAdress_)
 void MaagWifi::setNM(std::string sNMAdress_)
 {
 	m_sNMAdress = sNMAdress_;
+}
+
+void MaagWifi::setDNS(std::string sDNSAdress_)
+{
+	m_sDNSAdress = sDNSAdress_;
 }
 
 void MaagWifi::setSSID(std::string sSSID_)
