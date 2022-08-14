@@ -149,11 +149,23 @@ esp_err_t MaagWifi::init_sta()
 	IpInfo.gw.addr = ipaddr_addr(m_sGWAdress.c_str());
 	IpInfo.netmask.addr = ipaddr_addr(m_sNMAdress.c_str());
 	ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &IpInfo));
+
+	// trying to set dns info...
+	tcpip_adapter_dns_info_t dns_info = {0};
+	dns_info.ip.type = IPADDR_TYPE_V4;
+	IP4_ADDR(&dns_info.ip.u_addr.ip4, 8, 8, 8, 8);
+	//dns_info.ip.u_addr = ipaddr_addr("8.8.8.8");
+	tcpip_adapter_set_dns_info(TCPIP_ADAPTER_IF_STA, ESP_NETIF_DNS_MAIN, &dns_info);
+
+
+
 	// configure default sta-params
 	wifi_config_t sta_config = {};
 	strcpy((char *)sta_config.sta.ssid, m_sSSID.c_str());
 	strcpy((char *)sta_config.sta.password, m_sPW.c_str());
 	sta_config.sta.bssid_set = false;
+
+
 	// do not think next is needed...
 	// if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0)
 	// {

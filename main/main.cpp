@@ -40,8 +40,8 @@ THSI IS MAIN BRANCH
 #include "nvs_flash.h"
 
 #include "maag_wifi.h"
-
 #include "maag_gpio.h"
+#include "maag_sntp.h"
 
 #include "nixie_projdefs.h"
 #include "nixie_webserver.h"
@@ -63,6 +63,10 @@ extern "C" void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+    ESP_LOGI(TAG, "Initializing netif");
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_LOGI(TAG, "Initializing event loop");
+    ESP_ERROR_CHECK( esp_event_loop_create_default() );
     // =====================================================================
     // Wifi object
     MaagWifi wifi;
@@ -143,11 +147,18 @@ extern "C" void app_main()
         // ESP_LOGW(TAG, "CALLING FREERTOS_TASK IN A WHILE LOOP");
         // myTestClass.freeRtosTask(&myTestClass.arg);
 
-        ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
+        //ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
         // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
 
-        bToggle = !bToggle;
-        gpioOut.setOutput(bToggle);
+        //bToggle = !bToggle;
+        //gpioOut.setOutput(bToggle);
+
+        ESP_LOGW(TAG, "WAITING UNTIL SNTP....");
+        vTaskDelay((5000 / portTICK_PERIOD_MS));
+        ESP_LOGW(TAG, "SNTP!");
+
+        initialize_sntp_maag();
+
 
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }

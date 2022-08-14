@@ -3,4 +3,5 @@
 idf_component_register(SRCS "main.cpp"
                             "nixie_webserver.cpp"
                             "nixie_testClass.cpp"
+                            "maag_sntp.cpp"
                             INCLUDE_DIRS ".")
