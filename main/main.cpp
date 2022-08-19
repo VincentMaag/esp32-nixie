@@ -39,12 +39,11 @@ THSI IS MAIN BRANCH
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "maag_wifi.h"
-
+//#include "maag_wifi.h"
 #include "maag_gpio.h"
 
 #include "nixie_projdefs.h"
-#include "nixie_webserver.h"
+//#include "nixie_webserver.h"
 #include "nixie_testClass.h"
 
 static const char *TAG = "main";
@@ -65,20 +64,20 @@ extern "C" void app_main()
     ESP_ERROR_CHECK(ret);
     // =====================================================================
     // Wifi object
-    MaagWifi wifi;
-    wifi.setIP("192.168.178.140");
-    wifi.setGW("192.168.178.1");
-    wifi.setSSID("FRITZ!Box 5490 WT");
-    wifi.setPW("55940362741817360715");
-    // maagWifi.init_ap();
-    wifi.init_sta();
+    // MaagWifi wifi;
+    // wifi.setIP("192.168.178.140");
+    // wifi.setGW("192.168.178.1");
+    // wifi.setSSID("FRITZ!Box 5490 WT");
+    // wifi.setPW("55940362741817360715");
+    // // maagWifi.init_ap();
+    // wifi.init_sta();
     // =====================================================================
     // webserver object
     // MaagWebserver webserver;
     // webserver.createServer(0);
 
-    NixieWebserver webserver;  // create webserver object
-    webserver.createServer(0); // start webserver --> create freRtos tasks
+    // NixieWebserver webserver;  // create webserver object
+    // webserver.createServer(0); // start webserver --> create freRtos tasks
 
     // =====================================================================
     // Testobject
@@ -127,23 +126,23 @@ extern "C" void app_main()
     while (true)
     {
 
-        if (wifi.getConnectionStatus() == false)
-        {
-            ESP_LOGW(TAG, "caught disconnected esp. Waiting just to be sure...");
-            // wait a bit if we catch a disconnetced esp
-            vTaskDelay((5000 / portTICK_PERIOD_MS));
-            // if still disconnected, try and connect
-            if (wifi.getConnectionStatus() == false)
-            {
-                wifi.wifi_try_connect_sta();
-            }
-        }
+        // if (wifi.getConnectionStatus() == false)
+        // {
+        //     ESP_LOGW(TAG, "caught disconnected esp. Waiting just to be sure...");
+        //     // wait a bit if we catch a disconnetced esp
+        //     vTaskDelay((5000 / portTICK_PERIOD_MS));
+        //     // if still disconnected, try and connect
+        //     if (wifi.getConnectionStatus() == false)
+        //     {
+        //         wifi.wifi_try_connect_sta();
+        //     }
+        // }
 
         // don't do this because the freeRtos task is a while loop ;)
         // ESP_LOGW(TAG, "CALLING FREERTOS_TASK IN A WHILE LOOP");
         // myTestClass.freeRtosTask(&myTestClass.arg);
 
-        ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
+        // ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
         // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
 
         bToggle = !bToggle;
