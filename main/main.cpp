@@ -41,10 +41,13 @@ THSI IS MAIN BRANCH
 
 //#include "maag_wifi.h"
 #include "maag_gpio.h"
+#include "maag_i2c_port.h"
+#include "maag_i2c_device.h"
 
 #include "nixie_projdefs.h"
 //#include "nixie_webserver.h"
 #include "nixie_testClass.h"
+
 
 static const char *TAG = "main";
 
@@ -94,15 +97,41 @@ extern "C" void app_main()
 
     // EspGpio gpioOut(GPIO_NUM_15, GPIO_MODE_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
 
-    Gpio gpio_1(GPIO_NUM_13, GPIO_MODE_INPUT_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
+    // Gpio gpio_1(GPIO_NUM_13, GPIO_MODE_INPUT_OUTPUT, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE, GPIO_INTR_DISABLE);
 
-    GpioInput gpioIn(GPIO_NUM_14);
+    // GpioInput gpioIn(GPIO_NUM_14);
 
-    GpioOutput gpioOut(GPIO_NUM_15, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
-
+    // GpioOutput gpioOut(GPIO_NUM_15, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
 
     // gpio1.setOutput(true);
     // gpio2.setOutput(true);
+
+
+    // =====================================================================
+    // I2C
+
+    MaagI2CPort i2c;
+    i2c.initPort(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22);
+
+
+    uint8_t time_addr = 0x00;
+    uint8_t data[7] = {0};
+
+
+    MaagI2CDevice ds3231;
+    ds3231.setPort(i2c.getPort());
+    ds3231.setDeviceAddress(0x68);
+
+    
+
+    // i2c.i2c_master_init(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22)
+
+
+
+
+
+
+
 
     /* we want these tasks for nixie:
         - wifi, these tasks are created via object (not exactly sure where though...). We can restart stuff via the object
@@ -143,10 +172,13 @@ extern "C" void app_main()
         // myTestClass.freeRtosTask(&myTestClass.arg);
 
         // ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
-        // ESP_LOGW(TAG, "current nixie webserver requests: %i",webserver.getCommunicationCounter());
+        // ESP_LOGW(TAG, "Rönning");
+        ds3231.read(&time_addr, 1, &data[0], 7);
+        ESP_LOGW(TAG, "Time read: %i, %i, %i, %i, %i, %i, %i",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
+        ds3231.convertDisplayTime(data);
 
-        bToggle = !bToggle;
-        gpioOut.setOutput(bToggle);
+        // bToggle = !bToggle;
+        // gpioOut.setOutput(bToggle);
 
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
