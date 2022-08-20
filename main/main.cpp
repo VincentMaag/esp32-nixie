@@ -67,10 +67,12 @@ extern "C" void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    ESP_LOGI(TAG, "Initializing netif");
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_LOGI(TAG, "Initializing event loop");
-    ESP_ERROR_CHECK( esp_event_loop_create_default() );
+    
+    // not sure why i added next lines...
+    // ESP_LOGI(TAG, "Initializing netif");
+    // ESP_ERROR_CHECK(esp_netif_init());
+    // ESP_LOGI(TAG, "Initializing event loop");
+    // ESP_ERROR_CHECK( esp_event_loop_create_default() );
     // =====================================================================
     // Wifi object
     MaagWifi wifi;

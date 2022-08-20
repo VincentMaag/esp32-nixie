@@ -9,7 +9,7 @@
 		"terminal.integrated.profiles.windows": {
 
 			// === PC ========================================================================
-			"esp32 PC": {
+			"esp32 PC 4.4": {
 				"path": [
 					"${env:windir}\\Sysnative\\cmd.exe",
 					"${env:windir}\\System32\\cmd.exe"
@@ -18,12 +18,21 @@
 				"icon": "terminal-cmd"
 			},
 			// === SURFACE ========================================================================
-			"esp32 SurfaceBook": {
+			"esp32 Surface 4.0": {
 				"path": [
 					"${env:windir}\\Sysnative\\cmd.exe",
 					"${env:windir}\\System32\\cmd.exe"
 				],
 				"args": ["/k", "C:/esp32_idf/esp-idf_4_0/export.bat"],
+				"icon": "terminal-cmd"
+			},
+			// === SURFACE 4_4 ========================================================================
+			"esp32 Surface 4.4": {
+				"path": [
+					"${env:windir}\\Sysnative\\cmd.exe",
+					"${env:windir}\\System32\\cmd.exe"
+				],
+				"args": ["/k", "C:/esp32_idf/.espressif/idf_cmd_init.bat esp-idf-c0444cd14f831c567eceecced35e069a"],
 				"icon": "terminal-cmd"
 			},
 		},
