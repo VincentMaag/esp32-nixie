@@ -25,7 +25,7 @@ private:
 
 public:
     // set nixie http_server here
-    NixieWebserver(/* args */);
+    NixieWebserver();
     ~NixieWebserver();
 
     // get all data

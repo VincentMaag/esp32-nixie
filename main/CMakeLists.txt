@@ -3,7 +3,5 @@
 idf_component_register(SRCS "main.cpp"
                             "nixie_webserver.cpp"
                             "nixie_testClass.cpp"
-                            "maag_sntp.cpp"
-                            "maag_i2c_port.cpp"
-                            "maag_i2c_device.cpp"
+                            "nixie_ds3231.cpp"
                             INCLUDE_DIRS ".")

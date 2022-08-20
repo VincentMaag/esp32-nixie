@@ -1,10 +1,6 @@
 /*
 
 
-    - add d3231 class and test with eval board
-
-    - create framework for I2C
-
 
     - add wifi.activateAutoConnect() --> this will create a task that tries to reconnect if disconnected. This task is a xTaskCreate so that it will run indepandantly
 
@@ -12,14 +8,16 @@
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
 
 
-
-    - put maag_sntp into maag_lib component
-
     + gpio.cpp, gpio.h --> set up some neat functions to get status of gpio's --> and setup functions, try to create a class "gpio"!
         + create base classes for gpio and in/out
         + put gpio stuff into a component
 
-    - get the RTC functionality of stepper.c bla to work in cpp so that we can write stuff
+    (- get the RTC functionality of stepper.c bla to work in cpp so that we can write stuff)
+
+
+    - create an SPI interface Framework
+        - class 
+
 
     - find out how to turn on optimiziation of compiler and experiment with it
 
@@ -52,6 +50,7 @@ THSI IS MAIN BRANCH
 #include "nixie_projdefs.h"
 #include "nixie_webserver.h"
 #include "nixie_testClass.h"
+#include "nixie_ds3231.h"
 
 
 static const char *TAG = "main";
@@ -123,18 +122,21 @@ extern "C" void app_main()
     // I2C
 
     MaagI2CPort i2c;
-    i2c.initPort(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22);
+    i2c.initPort(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22, I2C_MODE_MASTER);
 
 
-    uint8_t time_addr = 0x00;
-    uint8_t data[7] = {0};
+    // uint8_t time_addr = 0x00;
+    // uint8_t data[7] = {0};
 
 
-    MaagI2CDevice ds3231;
-    ds3231.setPort(i2c.getPort());
-    ds3231.setDeviceAddress(0x68);
+    // MaagI2CDevice ds3231;
+    // ds3231.setPort(i2c.getPort());
+    // ds3231.setDeviceAddress(0x68);
 
-    
+
+    // create DS3231 i2c device and set port
+    DS3231 ds3231(i2c.getPort());
+
 
     // i2c.i2c_master_init(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22)
 
@@ -162,7 +164,6 @@ extern "C" void app_main()
     // SNTP
     MaagSNTP sntp;
     sntp.initStart();
-    
     
     
     // initialize_sntp_maag();
@@ -194,9 +195,38 @@ extern "C" void app_main()
 
         // ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
         // ESP_LOGW(TAG, "Rönning");
-        ds3231.read(&time_addr, 1, &data[0], 7);
-        ESP_LOGW(TAG, "Time read: %i, %i, %i, %i, %i, %i, %i",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
-        ds3231.convertDisplayTime(data);
+
+        // get current system time, set by sntp server
+        // time_t now = 0;
+        // time(&now);
+	    struct tm espTime = {0};
+        struct tm ds3231Time = {0};
+	    // localtime_r(&now, &espTime);
+
+        // set time of ds3231
+        // ds3231.setTime(espTime);
+        ds3231.setTimeToEspSystemTime();
+        // short pause
+        vTaskDelay((100 / portTICK_PERIOD_MS));
+        // read time of ds3231
+        ds3231Time = ds3231.getTime();
+
+
+        char strftime_buf_esp[64];
+        strftime(strftime_buf_esp, sizeof(strftime_buf_esp), "%c", &espTime);
+        char strftime_buf_ds3231[64];
+        strftime(strftime_buf_ds3231, sizeof(strftime_buf_ds3231), "%c", &ds3231Time);
+        
+        ESP_LOGW(TAG, "The current date/times are: === esp: %s === ds3231: %s", strftime_buf_esp, strftime_buf_ds3231);
+
+
+        // ds3231.setTime(&espTime);
+
+        // ds3231.read(&time_addr, 1, &data[0], 7);
+
+        // ESP_LOGW(TAG, "Time read: %i, %i, %i, %i, %i, %i, %i",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
+        
+        // ds3231.convertDisplayTime(data);
 
         // bToggle = !bToggle;
         // gpioOut.setOutput(bToggle);
