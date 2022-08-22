@@ -51,6 +51,7 @@ THSI IS MAIN BRANCH
 #include "nixie_webserver.h"
 #include "nixie_testClass.h"
 #include "nixie_ds3231.h"
+#include "nixie_time.h"
 
 
 static const char *TAG = "main";
@@ -164,6 +165,13 @@ extern "C" void app_main()
     // SNTP
     MaagSNTP sntp;
     sntp.initStart();
+
+
+    // =====================================================================
+    // Nixie Time
+    // create nixie time instance and pass sntp & ds3231 objects as reference
+    NixieTime nixieTime(sntp, ds3231);
+
     
     
     // initialize_sntp_maag();
@@ -199,26 +207,34 @@ extern "C" void app_main()
         // get current system time, set by sntp server
         // time_t now = 0;
         // time(&now);
-	    struct tm espTime = {0};
-        struct tm ds3231Time = {0};
-	    // localtime_r(&now, &espTime);
-
-        // set time of ds3231
-        // ds3231.setTime(espTime);
-        ds3231.setTimeToEspSystemTime();
-        // short pause
-        vTaskDelay((100 / portTICK_PERIOD_MS));
-        // read time of ds3231
-        ds3231Time = ds3231.getTime();
 
 
-        char strftime_buf_esp[64];
-        strftime(strftime_buf_esp, sizeof(strftime_buf_esp), "%c", &espTime);
-        char strftime_buf_ds3231[64];
-        strftime(strftime_buf_ds3231, sizeof(strftime_buf_ds3231), "%c", &ds3231Time);
+
+        // =============================================================================
+
+	    // struct tm espTime = {0};
+        // struct tm ds3231Time = {0};
+	    // // localtime_r(&now, &espTime);
+
+        // // set time of ds3231
+        // // ds3231.setTime(espTime);
+        // ds3231.setTimeToEspSystemTime();
+        // // short pause
+        // vTaskDelay((100 / portTICK_PERIOD_MS));
+        // // read time of ds3231
+        // ds3231Time = ds3231.getTime();
+
+
+        // char strftime_buf_esp[64];
+        // strftime(strftime_buf_esp, sizeof(strftime_buf_esp), "%c", &espTime);
+        // char strftime_buf_ds3231[64];
+        // strftime(strftime_buf_ds3231, sizeof(strftime_buf_ds3231), "%c", &ds3231Time);
         
-        ESP_LOGW(TAG, "The current date/times are: === esp: %s === ds3231: %s", strftime_buf_esp, strftime_buf_ds3231);
+        // ESP_LOGW(TAG, "The current date/times are: === esp: %s === ds3231: %s", strftime_buf_esp, strftime_buf_ds3231);
 
+        nixieTime.doSomething();
+
+        // =============================================================================
 
         // ds3231.setTime(&espTime);
 

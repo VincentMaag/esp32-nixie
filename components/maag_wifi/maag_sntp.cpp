@@ -27,12 +27,14 @@ uint8_t MaagSNTP::ui8firstInit = 0;
 // default callback function
 void MaagSNTP::defaultSyncNotificationCb(struct timeval *tv)
 {
-	time_t now = 0;
+	// new tm structure for convenience
 	struct tm timeinfo = {0};
-	time(&now);
-	localtime_r(&now, &timeinfo);
+	// esp system time is passed in callback. Convert to tm
+	localtime_r(&(tv->tv_sec), &timeinfo);
+	// convert to a string
 	char strftime_buf[64];
 	strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+	// and log
 	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/time is: %s", strftime_buf);
 }
 
