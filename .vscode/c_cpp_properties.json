@@ -34,7 +34,7 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x86",
-            "compilerPath": "c:\\.espressif\\tools\\xtensa-esp32-elf\\esp-2019r2-8.2.0\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe"
+            "compilerPath": "c:\\esp32_idf\\.espressif\\tools\\xtensa-esp32-elf\\esp-2019r2-8.2.0\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe"
         },
         {
             // === SURFACE IDF ========================================================================
@@ -52,7 +52,7 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x86",
-            "compilerPath": "c:\\.espressif\\tools\\xtensa-esp32-elf\\esp-2019r2-8.2.0\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe"
+            "compilerPath": "c:\\esp32_idf\\.espressif\\tools\\xtensa-esp32-elf\\esp-2019r2-8.2.0\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe"
         }
     ],
     "version": 4

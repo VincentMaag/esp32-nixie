@@ -28,9 +28,16 @@ NixieTime::~NixieTime()
 
 struct tm NixieTime::getEspTime()
 {
-	time_t now = 0;
-	time(&now);
-	localtime_r(&now, &m_espTime);
+	// time_t now = 0;
+	// time(&now);
+
+	struct timeval now = {0};
+
+	gettimeofday(&now, NULL);
+
+	// now.tv_sec
+
+	localtime_r(&(now.tv_sec), &m_espTime);
 	return m_espTime;
 }
 
@@ -66,13 +73,9 @@ esp_err_t NixieTime::synchTime(nixie_time_master_t master_){
 		// get ds3231 time
 		NixieTime::getDs3231Time();
 		// prepare temp variable
-		timeval now;
+		struct timeval now;
 		// refactor tm into time_t, set seconds of timeval
 		now.tv_sec = mktime(&m_ds3231Time);
-		
-
-		//mktime(&(NixieTime::getDs3231Time()))
-
 		// set esp32 system time
 		settimeofday(&now, NULL);
 		ESP_LOGW(TAG, "ESP-System time has been synchronized to DS3231 time");
@@ -89,7 +92,8 @@ void NixieTime::doSomething()
 	// get esp and ds3231 time
 	ESP_LOGI(TAG, "The current date/times are: === ESP-SYSTEM: %s === DS3231-DEVICE: %s", NixieTime::getEspTimeAsString(), NixieTime::getDs3231TimeAsString());
 	// wait a second, then synchronize esp time to ds3231 time
-	vTaskDelay((100 / portTICK_PERIOD_MS));
-	NixieTime::synchTime(NIXIE_TIME_DS3231_AS_MASTER);
+	
+	//vTaskDelay((100 / portTICK_PERIOD_MS));
+	//NixieTime::synchTime(NIXIE_TIME_DS3231_AS_MASTER);
 
 }

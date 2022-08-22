@@ -31,7 +31,9 @@ THSI IS MAIN BRANCH
 #include <string.h>
 #include <string>
 
-#include <string.h>
+#include <time.h>
+#include <sys/time.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -182,6 +184,8 @@ extern "C" void app_main()
     // ...
     bool bToggle = false;
 
+    int counter = 0;
+
     while (true)
     {
 
@@ -204,35 +208,45 @@ extern "C" void app_main()
         // ESP_LOGW(TAG, "nixie webserver requests: %i, gpioOut: %i, toggle: %i", webserver.getCommunicationCounter(), gpioIn.getInput(), bToggle);
         // ESP_LOGW(TAG, "Rönning");
 
-        // get current system time, set by sntp server
-        // time_t now = 0;
-        // time(&now);
-
 
 
         // =============================================================================
 
-	    // struct tm espTime = {0};
-        // struct tm ds3231Time = {0};
-	    // // localtime_r(&now, &espTime);
-
-        // // set time of ds3231
-        // // ds3231.setTime(espTime);
-        // ds3231.setTimeToEspSystemTime();
-        // // short pause
-        // vTaskDelay((100 / portTICK_PERIOD_MS));
-        // // read time of ds3231
-        // ds3231Time = ds3231.getTime();
+	    
+        // nixieTime.doSomething();
 
 
-        // char strftime_buf_esp[64];
-        // strftime(strftime_buf_esp, sizeof(strftime_buf_esp), "%c", &espTime);
-        // char strftime_buf_ds3231[64];
-        // strftime(strftime_buf_ds3231, sizeof(strftime_buf_ds3231), "%c", &ds3231Time);
+        // workflow: at startup, synchronize esp time with ds3231 time
+        // callback of sntp: synchronize ds3231 time according to esp time because esp time has been synchnd via sntp
+        // once every hour: check difference between esp time and ds3231. If significant, then synchronize esp with ds3231
+        // this means we need these functions in nixie_time class:
+        //      - checkAndSynchEspTime() --> if diff > 1s, then synch. To be neat, ets use NIXIE_TIME_MASTER bla to choose which one gets synched
+        //      - createSynchTask(h, diff) --> xTaskCreate which does above function every hour. Or we can scratch above function and do all in this task. Try and and handle how to kill this task too!
+
+
+        // display times at startup of system
+        ESP_LOGE(TAG, "STARTUP: ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
+        vTaskDelay((1000 / portTICK_PERIOD_MS));
+        // set esp32 time the same as ds3231 time because we think that ds3231 will be correct
+        nixieTime.synchTime(NIXIE_TIME_DS3231_AS_MASTER);
+        vTaskDelay((1000 / portTICK_PERIOD_MS));
+        // display times at startup of system
+        ESP_LOGE(TAG, "DS3231 --> ESP: ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
+        vTaskDelay((20000 / portTICK_PERIOD_MS));
+        // Wait for 20 seconds until sntp has synched, then set nixie the same as esp32
+        nixieTime.synchTime(NIXIE_TIME_ESP_AS_MASTER);
+        vTaskDelay((1000 / portTICK_PERIOD_MS));
+        ESP_LOGE(TAG, "ESP --> DS3231 after sntp synch: ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
         
-        // ESP_LOGW(TAG, "The current date/times are: === esp: %s === ds3231: %s", strftime_buf_esp, strftime_buf_ds3231);
+    
 
-        nixieTime.doSomething();
+        // ESP_LOGE(TAG, "ESP tm:    %i:%i:%i:%i:%i:%i:%i:%i:%i:",ESP_time_tm.tm_hour, ESP_time_tm.tm_isdst, ESP_time_tm.tm_mday, ESP_time_tm.tm_min, ESP_time_tm.tm_mon, ESP_time_tm.tm_sec, ESP_time_tm.tm_wday, ESP_time_tm.tm_yday, ESP_time_tm.tm_year);
+        // ESP_LOGE(TAG, "DS3231 tm: %i:%i:%i:%i:%i:%i:%i:%i:%i:",DS3231_time_tm.tm_hour, DS3231_time_tm.tm_isdst, DS3231_time_tm.tm_mday, DS3231_time_tm.tm_min, DS3231_time_tm.tm_mon, DS3231_time_tm.tm_sec, DS3231_time_tm.tm_wday, DS3231_time_tm.tm_yday, DS3231_time_tm.tm_year);
+        // ESP_LOGE(TAG, "ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
+        // // ESP_LOGE(TAG, "ESP timeval.time_t (gettimeofday): %ld, DS3231 time_t: %ld", ESP_timeval.tv_sec, DS3231_time_t);
+	
+
+        
 
         // =============================================================================
 
