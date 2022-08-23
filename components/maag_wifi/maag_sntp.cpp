@@ -28,7 +28,7 @@ uint8_t MaagSNTP::ui8firstInit = 0;
 void MaagSNTP::defaultSyncNotificationCb(struct timeval *tv)
 {
 	// new tm structure for convenience
-	struct tm timeinfo = {0};
+	struct tm timeinfo = {};
 	// esp system time is passed in callback. Convert to tm
 	localtime_r(&(tv->tv_sec), &timeinfo);
 	// convert to a string

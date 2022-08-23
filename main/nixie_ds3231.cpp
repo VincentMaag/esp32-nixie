@@ -72,10 +72,12 @@ struct tm DS3231::getTime()
 {
 
 	uint8_t time_reg = DS3231_ADDR_TIME;
-	uint8_t data[7] = {0};
+	uint8_t data[7] = {};
 	// get time of i2c device
 	ESP_LOGI(TAG, "Reading time from ds3231");
-	MaagI2CDevice::read(&time_reg, 1, &data[0], 7);
+	if(MaagI2CDevice::read(&time_reg, 1, &data[0], 7) != ESP_OK){
+		return m_ds3231Time;
+	};
 
 	/* convert to unix time structure */
 	m_ds3231Time.tm_sec = DS3231::bcd2dec(data[0]);
@@ -101,10 +103,8 @@ struct tm DS3231::getTime()
 
 esp_err_t DS3231::setTime(struct tm time_)
 {
-
 	uint8_t time_reg = DS3231_ADDR_TIME;
 	uint8_t data[7] = {0};
-
 	/* time/date data */
 	data[0] = DS3231::dec2bcd(time_.tm_sec);
 	data[1] = DS3231::dec2bcd(time_.tm_min);
@@ -125,7 +125,7 @@ esp_err_t DS3231::setTimeToEspSystemTime()
 	// get esp32 system time
 	time_t now = 0;
 	time(&now);
-	struct tm espTime = {0};
+	struct tm espTime = {};
 	localtime_r(&now, &espTime);
 	// set ds3231 time
 	return DS3231::setTime(espTime);

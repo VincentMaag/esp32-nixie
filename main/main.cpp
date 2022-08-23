@@ -166,15 +166,36 @@ extern "C" void app_main()
     // =====================================================================
     // SNTP
     MaagSNTP sntp;
-    sntp.initStart();
+    // sntp.initStart();
 
 
     // =====================================================================
     // Nixie Time
     // create nixie time instance and pass sntp & ds3231 objects as reference
     NixieTime nixieTime(sntp, ds3231);
+    // start a synchronisation task that will try and synch esp-time to ds3231 time
+    nixieTime.createSynchTask(2,NIXIE_TIME_DS3231_AS_MASTER,6000,1);
 
-    
+
+    /*
+    // to do 23.08.2022
+        - clean all these comments
+        - sntp initStart: make a constructor that takes the function pointer as argument, so that we can init in one line
+        - even better: find a way to stop service, set new function , then start service again so that
+        if no nixieTime, the standard callbakc is set. Then we stop it in nixie, set callback, and start again!
+        - put sntp intervall into constructor
+        
+        - remove read/write LOGI's from i2c read, write functions
+        - make read/write i2c threadsafe
+
+        - create a "try and connect if disconnetced"-Task in maag-wifi so that if disonnected, it will try and connect
+
+
+    */
+
+    // start sntp service that will synch both times if sntp calls back
+    sntp.setSyncNotificationCb(nixieTime.nixieTimeSNTPSyncNotificationCb);
+    sntp.initStart();
     
     // initialize_sntp_maag();
 
@@ -224,21 +245,31 @@ extern "C" void app_main()
         //      - createSynchTask(h, diff) --> xTaskCreate which does above function every hour. Or we can scratch above function and do all in this task. Try and and handle how to kill this task too!
 
 
-        // display times at startup of system
-        ESP_LOGE(TAG, "STARTUP: ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
-        vTaskDelay((1000 / portTICK_PERIOD_MS));
-        // set esp32 time the same as ds3231 time because we think that ds3231 will be correct
-        nixieTime.synchTime(NIXIE_TIME_DS3231_AS_MASTER);
-        vTaskDelay((1000 / portTICK_PERIOD_MS));
-        // display times at startup of system
-        ESP_LOGE(TAG, "DS3231 --> ESP: ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
-        vTaskDelay((20000 / portTICK_PERIOD_MS));
-        // Wait for 20 seconds until sntp has synched, then set nixie the same as esp32
-        nixieTime.synchTime(NIXIE_TIME_ESP_AS_MASTER);
-        vTaskDelay((1000 / portTICK_PERIOD_MS));
-        ESP_LOGE(TAG, "ESP --> DS3231 after sntp synch: ESP string: %s, DS3231 string: %s", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString());
+        // // display times at startup of system
+        // ESP_LOGE(TAG, "STARTUP: ESP string: %s, DS3231 string: %s, Difference: %ld", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString(), nixieTime.getTimeDifference());
+        // vTaskDelay((1000 / portTICK_PERIOD_MS));
+        // // set esp32 time the same as ds3231 time because we think that ds3231 will be correct
+        // nixieTime.synchTime(NIXIE_TIME_DS3231_AS_MASTER);
+        // vTaskDelay((1000 / portTICK_PERIOD_MS));
+        // // display times at startup of system
+        // ESP_LOGE(TAG, "DS3231 --> ESP: ESP string: %s, DS3231 string: %s, Difference: %ld", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString(), nixieTime.getTimeDifference());
+        // vTaskDelay((20000 / portTICK_PERIOD_MS));
+        // // Wait for 20 seconds until sntp has synched, then set nixie the same as esp32
+        // nixieTime.synchTime(NIXIE_TIME_ESP_AS_MASTER);
+        // vTaskDelay((1000 / portTICK_PERIOD_MS));
+        // ESP_LOGE(TAG, "ESP --> DS3231 after sntp synch: ESP string: %s, DS3231 string: %s, Difference: %ld", nixieTime.getEspTimeAsString(), nixieTime.getDs3231TimeAsString(), nixieTime.getTimeDifference());
         
     
+
+        // display times
+        // nixieTime.logTimes();
+
+        // most probably, ds3231 time is the correct one. So we check if synchronisation is needed and synch esp to ds3231
+        //nixieTime.synchTimeIfDiffLargerThan(2, NIXIE_TIME_DS3231_AS_MASTER);
+        // nothing more to do now
+        
+
+
 
         // ESP_LOGE(TAG, "ESP tm:    %i:%i:%i:%i:%i:%i:%i:%i:%i:",ESP_time_tm.tm_hour, ESP_time_tm.tm_isdst, ESP_time_tm.tm_mday, ESP_time_tm.tm_min, ESP_time_tm.tm_mon, ESP_time_tm.tm_sec, ESP_time_tm.tm_wday, ESP_time_tm.tm_yday, ESP_time_tm.tm_year);
         // ESP_LOGE(TAG, "DS3231 tm: %i:%i:%i:%i:%i:%i:%i:%i:%i:",DS3231_time_tm.tm_hour, DS3231_time_tm.tm_isdst, DS3231_time_tm.tm_mday, DS3231_time_tm.tm_min, DS3231_time_tm.tm_mon, DS3231_time_tm.tm_sec, DS3231_time_tm.tm_wday, DS3231_time_tm.tm_yday, DS3231_time_tm.tm_year);
@@ -261,6 +292,8 @@ extern "C" void app_main()
         // bToggle = !bToggle;
         // gpioOut.setOutput(bToggle);
 
+
+        ESP_LOGE(TAG, "Main doing shit all :)");
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
 
