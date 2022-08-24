@@ -54,10 +54,6 @@ DS3231::DS3231(i2c_port_t port_)
 	ESP_LOGW(TAG, "DS3231 instance created");
 }
 
-DS3231::~DS3231()
-{
-}
-
 uint8_t DS3231::bcd2dec(uint8_t arg_)
 {
 	return (arg_ >> 4) * 10 + (arg_ & 0x0f);
@@ -70,11 +66,10 @@ uint8_t DS3231::dec2bcd(uint8_t arg_)
 
 struct tm DS3231::getTime()
 {
-
 	uint8_t time_reg = DS3231_ADDR_TIME;
 	uint8_t data[7] = {};
 	// get time of i2c device
-	ESP_LOGI(TAG, "Reading time from ds3231");
+	// ESP_LOGI(TAG, "Reading time from ds3231");
 	if(MaagI2CDevice::read(&time_reg, 1, &data[0], 7) != ESP_OK){
 		return m_ds3231Time;
 	};
@@ -116,7 +111,7 @@ esp_err_t DS3231::setTime(struct tm time_)
 	data[5] = DS3231::dec2bcd(time_.tm_mon + 1);
 	data[6] = DS3231::dec2bcd(time_.tm_year - 0);
 
-	ESP_LOGI(TAG, "Writting time to ds3231");
+	//ESP_LOGI(TAG, "Writting time to ds3231");
 	return MaagI2CDevice::write(&time_reg, 1, data, 7);
 }
 

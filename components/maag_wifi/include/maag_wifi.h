@@ -31,9 +31,12 @@ private:
     std::string m_sDNSAdress;
     std::string m_sSSID;
     std::string m_sPW;
+    //
+    TickType_t m_autoConnectTasTicksToDelay = 5000;
+    // auto connect task that polls sta connection status and tries to connect if disconnected
+    static void sta_auto_connect_task(void * pArgs);
 public:
-	MaagWifi(/* args */);
-	~MaagWifi();
+	MaagWifi();
     // initialize and start wifi in Access Point (ap) mode
 	esp_err_t init_ap();
     // initialize and start wifi in Station (sta) mode. Will try to connect to configured AP
@@ -58,6 +61,8 @@ public:
     void setSSID(std::string sSSID_);
     // set password
     void setPW(std::string sPW_);
+    // create a connection task who's only job is to try and stay connected if in sta mode
+    esp_err_t createSTAAutoConnectTask(TickType_t autoConnectTasTicksToDelay_, BaseType_t xCoreID_);
 };
 
 #endif /* __MAAG_WIFI_H__ */

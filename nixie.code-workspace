@@ -136,7 +136,8 @@
 			"typeinfo": "cpp",
 			"variant": "cpp",
 			"fb_wifi.h": "c",
-			"*.inc": "cpp"
+			"*.inc": "cpp",
+			"pthread.h": "c"
 		}
 	}
 }

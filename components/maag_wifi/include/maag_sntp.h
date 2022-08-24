@@ -21,7 +21,6 @@ private:
 
 public:
     MaagSNTP();
-    ~MaagSNTP();
     // set synch interval in ms
     void setSynchInterval(uint32_t ui32interval_ms_);
     // set a callback function which is called when time is synched via sntp. Must be type sntp_sync_time_cb_t

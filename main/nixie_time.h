@@ -39,19 +39,29 @@ private:
     time_t m_synchTaskAllowedTimeDiff = 0; 
     nixie_time_master_t m_synchTaskMaster = NIXIE_TIME_DS3231_AS_MASTER;
     TickType_t m_synchTaskticksToDelay = 4000;
-
     // our esp32 synchronisation task that will do its job in the backgorund
     static void nixie_time_task(void * pArgs);
-
     // lets be cheeky here. Lets create a static pointer that we will point to an instance of this class
     static NixieTime* m_staticThis;
 
+    // function at startp to create a static pointer to last created instance of this class
     void pointToThisInstance(){
         m_staticThis = this;
     }
 
+    // our sntp callback function that will do the ds3231 synchronisation
+    static void nixieTimeSNTPSyncNotificationCb(struct timeval *tv);
+    // simple getters
+    time_t getSynchTaskAllowedTimeDiff(){
+        return m_synchTaskAllowedTimeDiff;
+    }
+    nixie_time_master_t getSynchTaskMaster(){
+        return m_synchTaskMaster;
+    }
+    TickType_t getSynchTaskticksToDelay(){
+        return m_synchTaskticksToDelay;
+    }
 
-    /* data */
 public:
     NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_);
     // syncronize Times between esp and ds3231. <Parameter>-Source will set <other>-Source
@@ -69,27 +79,7 @@ public:
     // check time difference, synchronize all if difference larger than argument in s
     esp_err_t synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_time_master_t master_);
     // create a Task that polls clock difference every x seconds and sets synchronizes times if difference larger tan argment
-    esp_err_t createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_);
-
-
-    // our sntp callback function that will do the ds3231 synchronisation
-    static void nixieTimeSNTPSyncNotificationCb(struct timeval *tv);
-
-    // simple getters
-    time_t getSynchTaskAllowedTimeDiff(){
-        return m_synchTaskAllowedTimeDiff;
-    }
-    nixie_time_master_t getSynchTaskMaster(){
-        return m_synchTaskMaster;
-    }
-    TickType_t getSynchTaskticksToDelay(){
-        return m_synchTaskticksToDelay;
-    }
-    // sntp_sync_time_cb_t getSyncNotificationCb(){
-    //     return nixieTimeSNTPSyncNotificationCb;
-    // }
-    
-    
+    esp_err_t createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_);   
     // get and log esp and ds3231 times in terminal
     void logTimes();
 };

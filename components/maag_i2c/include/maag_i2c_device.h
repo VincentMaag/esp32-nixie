@@ -27,8 +27,7 @@ private:
     uint8_t m_dev_addr;
 
 public:
-    MaagI2CDevice(/* args */);
-    ~MaagI2CDevice();
+    MaagI2CDevice();
     // select port that must already be initialized
     void setPort(i2c_port_t port_);
     // set device address
@@ -37,14 +36,6 @@ public:
     esp_err_t read(uint8_t *out_data, size_t out_size, uint8_t *in_data, size_t in_size);
     // write to device
     esp_err_t write(uint8_t *data_reg_, size_t data_reg_size_, uint8_t *out_data_, size_t out_data_size_);
-
-
-    // // these functions will move to ds3231 class
-    // esp_err_t setTime(tm *time_);
-
-
-    // // display time!
-    // esp_err_t convertDisplayTime(uint8_t data[7]);
 
 };
 

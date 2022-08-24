@@ -11,7 +11,7 @@
 
 // static TAG
 static const char *TAG = "nixie_time";
-
+// we need this one for our static callback function that is passed to sntp instance
 NixieTime* NixieTime::m_staticThis;
 
 // =============================================================================================================
@@ -24,8 +24,11 @@ NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231
 	// lol, set our non-static this pointer to a static one, so that we can use it in a static callback
 	// function that is handled in another class-instance ;)
 	NixieTime::pointToThisInstance();
-	// m_espTime = {};
-	// m_ds3231Time = {};
+	//
+	// initialize sntp with our custom static callback and start sntp service
+	m_sntp.setSynchInterval(60000);
+	m_sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
+    m_sntp.initStart();
 }
 
 struct tm NixieTime::getEspTime()
@@ -96,11 +99,11 @@ esp_err_t NixieTime::synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_ti
 	if(timeDiff > abs(allowedTimeDiff_)){
 		// if times are not syncronized, we set esp equal to ds3231 because we trust
 		// ds3231 more. Of course this only holds if ds3231 has not been reset
-		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference of %ld",timeDiff);
+		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference of %ld. Attempting to syncronize time",timeDiff);
 		return NixieTime::synchTime(master_);
 	}else{
 		// if difference is not greater than user argument, do nothing
-		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference which is in the boundaries of %ld",allowedTimeDiff_);
+		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference which is in the boundaries of %ld. No syncronization needed.",allowedTimeDiff_);
 		return ESP_OK;
 	}
 	return ESP_FAIL;
@@ -108,12 +111,13 @@ esp_err_t NixieTime::synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_ti
     
  esp_err_t NixieTime::createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_){
 	
-	// copy member variables for our synchTask
+	// copy parameters to our member variables. These will be visible in the nixie time task because we pass the "this" pointer when creating a FreeRtos Task!
 	m_synchTaskAllowedTimeDiff = synchTaskAllowedTimeDiff_;
 	m_synchTaskMaster = synchTaskMaster_;
 	m_synchTaskticksToDelay = synchTaskticksToDelay_;
 	// only create this task once!
-	xTaskCreatePinnedToCore(NixieTime::nixie_time_task, "nixie_time_task", 4000, this, 5, NULL, xCoreID_);
+	xTaskCreatePinnedToCore(NixieTime::nixie_time_task, "nixie_time_task", 4000, this, 0, NULL, xCoreID_);
+	ESP_LOGI(TAG, "nixie_time_task created");
 	return ESP_OK;
 
  }
@@ -121,7 +125,6 @@ esp_err_t NixieTime::synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_ti
  void NixieTime::nixie_time_task(void *pArgs)
  {
 	 const static char *TAG2 = "nixie_time_task";
-	 ESP_LOGW(TAG2, "nixie time synch handling task created");
 	 // cast my argument to what I know it is, because we created the task and past "this" as the argument pointer
 	 NixieTime *pNixieTime = (NixieTime *)pArgs;
 

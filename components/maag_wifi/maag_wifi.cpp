@@ -45,11 +45,6 @@ MaagWifi::MaagWifi(/* args */)
 	ESP_LOGI(TAG, "MaagWifi instance created");
 }
 
-MaagWifi::~MaagWifi()
-{
-	ESP_LOGE(TAG, "MaagWifi instance destroid");
-}
-
 esp_err_t MaagWifi::event_handler(void *ctx, system_event_t *event)
 {
 	switch (event->event_id)
@@ -175,7 +170,6 @@ esp_err_t MaagWifi::init_sta()
 
 void MaagWifi::wifi_try_connect_sta()
 {
-
 	for (int i = 0; i < 20; i++)
 	{
 		ESP_LOGW(TAG, "trying to disconnect any wifi connection");
@@ -199,7 +193,6 @@ void MaagWifi::wifi_try_connect_sta()
 		else
 		{
 			ESP_LOGE(TAG, "retry");
-			;
 		}
 	}
 }
@@ -239,3 +232,33 @@ void MaagWifi::setPW(std::string sPW_)
 	m_sPW = sPW_;
 }
 
+void MaagWifi::sta_auto_connect_task(void *pArgs)
+{
+	// cast ragument pointer to what we know it is because we pass the "this" pointer when creating FreeRtos Task!
+	MaagWifi *pMaagWifi = (MaagWifi *)pArgs;
+
+	while (1)
+	{
+		if (pMaagWifi->getConnectionStatus() == false)
+		{
+			ESP_LOGW(TAG, "caught disconnected esp. Trying a connection routine...");
+			pMaagWifi->wifi_try_connect_sta();
+			// wait a bit if we catch a disconnetced esp
+			// vTaskDelay((5000 / portTICK_PERIOD_MS));
+			// // if still disconnected, try and connect
+			// if (pMaagWifi->getConnectionStatus() == false)
+			// {
+			//     pMaagWifi->wifi_try_connect_sta();
+			// }
+		}
+		vTaskDelay((pMaagWifi->m_autoConnectTasTicksToDelay / portTICK_PERIOD_MS));
+	}
+}
+
+esp_err_t MaagWifi::createSTAAutoConnectTask(TickType_t autoConnectTasTicksToDelay_, BaseType_t xCoreID_)
+{
+	m_autoConnectTasTicksToDelay = autoConnectTasTicksToDelay_;
+	xTaskCreatePinnedToCore(MaagWifi::sta_auto_connect_task, "sta_auto_connect_task", 1024, this, 0, NULL, xCoreID_);
+	ESP_LOGI(TAG, "sta_auto_connect_task created");
+	return ESP_OK;
+}

@@ -22,23 +22,6 @@ sntp_sync_time_cb_t MaagSNTP::m_callback_func;
 uint8_t MaagSNTP::ui8firstInit = 0;
 
 // =============================================================================================================
-// STATIC FUNCTIONS
-// =============================================================================================================
-// default callback function
-void MaagSNTP::defaultSyncNotificationCb(struct timeval *tv)
-{
-	// new tm structure for convenience
-	struct tm timeinfo = {};
-	// esp system time is passed in callback. Convert to tm
-	localtime_r(&(tv->tv_sec), &timeinfo);
-	// convert to a string
-	char strftime_buf[64];
-	strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-	// and log
-	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/time is: %s", strftime_buf);
-}
-
-// =============================================================================================================
 // CLASS MaagSNTP
 // =============================================================================================================
 MaagSNTP::MaagSNTP(/* args */)
@@ -48,12 +31,8 @@ MaagSNTP::MaagSNTP(/* args */)
 	m_callback_func = MaagSNTP::defaultSyncNotificationCb;
 }
 
-MaagSNTP::~MaagSNTP()
-{
-
-}
-
 void MaagSNTP::setSyncNotificationCb(sntp_sync_time_cb_t callback_func_){
+	ESP_LOGI(TAG, "Custom SNTP synch notification callback set");
 	// let our function pointer look in the right direction
 	m_callback_func = callback_func_;
 }
@@ -80,4 +59,17 @@ void MaagSNTP::initStart(){
 		ESP_LOGE(TAG, "SNTP already initialized! Cannot do this twice...");
 	}
 	MaagSNTP::ui8firstInit = 1;
+}
+
+void MaagSNTP::defaultSyncNotificationCb(struct timeval *tv)
+{
+	// new tm structure for convenience
+	struct tm timeinfo = {};
+	// esp system time is passed in callback. Convert to tm
+	localtime_r(&(tv->tv_sec), &timeinfo);
+	// convert to a string
+	char strftime_buf[64];
+	strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+	// and log
+	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/time is: %s", strftime_buf);
 }
