@@ -258,7 +258,7 @@ void MaagWifi::sta_auto_connect_task(void *pArgs)
 esp_err_t MaagWifi::createSTAAutoConnectTask(TickType_t autoConnectTasTicksToDelay_, BaseType_t xCoreID_)
 {
 	m_autoConnectTasTicksToDelay = autoConnectTasTicksToDelay_;
-	xTaskCreatePinnedToCore(MaagWifi::sta_auto_connect_task, "sta_auto_connect_task", 1024, this, 0, NULL, xCoreID_);
+	xTaskCreatePinnedToCore(MaagWifi::sta_auto_connect_task, "sta_auto_connect_task", 2048, this, 0, NULL, xCoreID_);
 	ESP_LOGI(TAG, "sta_auto_connect_task created");
 	return ESP_OK;
 }

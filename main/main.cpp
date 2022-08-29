@@ -1,8 +1,16 @@
 /*
 
-    - create an SPI interface Framework
-        - classes for MaagPorts, MaagDevice, then NixieXYZ, whatever it's called
-        - same stuff as i2c stuff
+    - SPI interface Framework
+        - seperate port (rename to host) and device in seperate cpp files
+        - host: 
+            - pass relevant configuration information --> max transfer size, 
+        - device:
+            - initDevice: clock_speed_hz
+            - spi_device_interface_config_t: understand this and set flags accordingly... --> probably no flags set for normal mode
+            - write() --> writePolling() --> pass variable stuff to write using pointers etc. Check length with max size m_max_size
+            - check out if we can do a writeInterrupt() --> callback functions? not needed atm
+            - get a readPolling() function going, but maybe hard to test atm
+
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
@@ -37,6 +45,8 @@
 #include "maag_sntp.h"
 #include "maag_i2c_port.h"
 #include "maag_i2c_device.h"
+
+#include "maag_spi_port.h"
 
 #include "nixie_projdefs.h"
 #include "nixie_webserver.h"
@@ -112,14 +122,31 @@ extern "C" void app_main()
 
 
 
+    // =====================================================================
+    // SPI
+    MaagSpiPort spi;
+    spi.initHost(SPI2_HOST,GPIO_NUM_19, GPIO_NUM_23,GPIO_NUM_18);
+
+    MaagSpiDevice mux;
+    mux.initDevice(spi.getHostDevice());
+
+
+
+    /* SPI	MOSI	MISO	CLK	    CS
+    VSPI	GPIO 23	GPIO 19	GPIO 18	GPIO 5
+    */
+
+
+
 
 
     while (true)
     {
 
- 
+        ESP_LOGE(TAG, "trying to write something on spi bus");
+        mux.write(0xB3,0x7C);        
 
-        ESP_LOGE(TAG, "Main doing shit all :)");
+        // ESP_LOGE(TAG, "Main doing shit all :)");
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
 
