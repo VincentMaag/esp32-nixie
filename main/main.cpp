@@ -1,21 +1,18 @@
 /*
 
     - SPI interface Framework
-        - seperate port (rename to host) and device in seperate cpp files
         - host: 
-            - pass relevant configuration information --> max transfer size, 
+            - pass Init-parameters in constructor, init function used as init() without params
+            - pass relevant configuration information --> max transfer size
         - device:
-            - initDevice: clock_speed_hz
-            - spi_device_interface_config_t: understand this and set flags accordingly... --> probably no flags set for normal mode
-            - write() --> writePolling() --> pass variable stuff to write using pointers etc. Check length with max size m_max_size
-            - check out if we can do a writeInterrupt() --> callback functions? not needed atm
-            - get a readPolling() function going, but maybe hard to test atm
+            - pass Init-parameters in constructor, init function used as init() without params
+            - make write_bytes a bit more fool proof --> check pointer for NULL, check length etc.
+            - write_bytes() --> check if we can get a interrupt style working...
 
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
 
-    (- get the RTC functionality of stepper.c bla to work in cpp so that we can write stuff)
 
     - wifi: use the "this" way to pass the object into a FreeRtos Task. Do this in http_serve task for wifi!
 
@@ -46,13 +43,16 @@
 #include "maag_i2c_port.h"
 #include "maag_i2c_device.h"
 
-#include "maag_spi_port.h"
+#include "maag_spi_host.h"
+#include "maag_spi_device.h"
 
 #include "nixie_projdefs.h"
 #include "nixie_webserver.h"
 #include "nixie_testClass.h"
 #include "nixie_ds3231.h"
 #include "nixie_time.h"
+
+#include "nixie_hv5622.h"
 
 
 static const char *TAG = "main";
@@ -97,8 +97,8 @@ extern "C" void app_main()
     // =====================================================================
     // GPIO's
     GpioInput gpioIn(GPIO_NUM_14,GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE);
-    // GpioOutput gpioOut(GPIO_NUM_15, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
-    // gpio1.setOutput(true);
+    // GpioOutput gpioOut(GPIO_NUM_5, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
+    // gpioOut.setOutput(true);
     // gpio2.setOutput(true);
     // =====================================================================
     // I2C
@@ -124,11 +124,19 @@ extern "C" void app_main()
 
     // =====================================================================
     // SPI
-    MaagSpiPort spi;
+    // create a host
+    MaagSpiHost spi;
     spi.initHost(SPI2_HOST,GPIO_NUM_19, GPIO_NUM_23,GPIO_NUM_18);
+    // create a standard spi device, connect to host
+    // MaagSpiDevice mux;
+    // mux.initDevice(spi.getHostDevice(),10000,GPIO_NUM_5);
 
-    MaagSpiDevice mux;
-    mux.initDevice(spi.getHostDevice());
+    // create an hv5622 spi device
+    NixieHv5622 hv5622;
+    hv5622.initDevice(spi.getHostDevice(),10000,GPIO_NUM_5);
+
+
+   // NixieHv5622 hv5622;
 
 
 
@@ -137,15 +145,14 @@ extern "C" void app_main()
     */
 
 
-
-
-
     while (true)
     {
 
-        ESP_LOGE(TAG, "trying to write something on spi bus");
-        mux.write(0xB3,0x7C);        
-
+        //ESP_LOGE(TAG, "trying to write something on spi bus");
+        uint8_t data[2] = {0xB3,0x7C};
+        hv5622.select();
+        hv5622.write_bytes(data, 2*8);        
+        hv5622.release();
         // ESP_LOGE(TAG, "Main doing shit all :)");
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }

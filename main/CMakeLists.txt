@@ -5,5 +5,5 @@ idf_component_register(SRCS "main.cpp"
                             "nixie_testClass.cpp"
                             "nixie_ds3231.cpp"
                             "nixie_time.cpp"
-                            "maag_spi_port.cpp"
+                            "nixie_hv5622.cpp"
                             INCLUDE_DIRS ".")

@@ -10,6 +10,8 @@
 
 
 */
+
+#include "esp_log.h"
 #include "maag_gpio.h"
 
 // static TAG
@@ -25,10 +27,6 @@ Gpio::Gpio()
 Gpio::Gpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type)
 {
 	configure_gpio(gpio_nr, mode, pull_down_en, pull_up_en, intr_type);
-}
-
-Gpio::~Gpio()
-{
 }
 
 void Gpio::configure_gpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type)
@@ -67,8 +65,8 @@ GpioInput::GpioInput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pull
 	configure_gpio(gpio_nr, GPIO_MODE_INPUT, pull_down_en, pull_up_en, GPIO_INTR_DISABLE);
 }
 
-GpioInput::~GpioInput()
-{
+void GpioInput::initAsInput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en){
+	configure_gpio(gpio_nr, GPIO_MODE_INPUT, pull_down_en, pull_up_en, GPIO_INTR_DISABLE);
 }
 
 bool GpioInput::getInput(){
@@ -92,13 +90,15 @@ GpioOutput::GpioOutput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pu
 	configure_gpio(gpio_nr, GPIO_MODE_OUTPUT, pull_down_en, pull_up_en, GPIO_INTR_DISABLE);
 }
 
-GpioOutput::~GpioOutput()
-{
+void GpioOutput::initAsOutput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en){
+	
+	configure_gpio(gpio_nr, GPIO_MODE_OUTPUT, pull_down_en, pull_up_en, GPIO_INTR_DISABLE);
 }
 
 esp_err_t GpioOutput::setOutput(bool out){
 	return gpio_set_level(Gpio::m_gpio_nr,(uint32_t)out);
 }
+
 
 
 

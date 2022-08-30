@@ -21,12 +21,11 @@ private:
 protected:
     // gpio channel number
     gpio_num_t m_gpio_nr;
-    // configure a gpio channel
+    // configure a gpio
     void configure_gpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type);
 
 public:
     Gpio();
-    ~Gpio();
     // constructor if we want to configure gpio individually
     Gpio(gpio_num_t gpio_nr, gpio_mode_t mode, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en, gpio_int_type_t intr_type);
     // get channel number
@@ -41,11 +40,12 @@ private:
 
 public:
     GpioInput();
-    ~GpioInput();
     // configure pio channel nr and pullup/down
     GpioInput(gpio_num_t gpio_nr);
     // configure pio channel nr and pullup/down
     GpioInput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en);
+    // configure/init an Input manually
+    void initAsInput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en);
     // get input value
     bool getInput();
 
@@ -57,12 +57,13 @@ class GpioOutput : public Gpio
 private:
     /* data */
 public:
-    GpioOutput(/* args */);
-    ~GpioOutput();
+    GpioOutput();
     // configure pio channel nr and pullup/down
     GpioOutput(gpio_num_t gpio_nr);
     // configure pio channel nr and pullup/down
     GpioOutput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en);
+    // configure/init an Output manually
+    void initAsOutput(gpio_num_t gpio_nr, gpio_pulldown_t pull_down_en, gpio_pullup_t pull_up_en);
     // set output value
     esp_err_t setOutput(bool out);
 };
