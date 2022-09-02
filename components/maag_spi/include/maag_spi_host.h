@@ -16,7 +16,7 @@ private:
     spi_host_device_t m_host_device;
 public:
     MaagSpiHost();
-    // init host device
+    // init host device without a chip select
     esp_err_t initHost(spi_host_device_t host_, gpio_num_t miso_gpio_nr_, gpio_num_t mosi_gpio_nr_, gpio_num_t sclk_gpio_nr_);
     // get initialized host device
     spi_host_device_t getHostDevice();

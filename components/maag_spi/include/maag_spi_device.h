@@ -21,7 +21,7 @@ public:
     MaagSpiDevice();
     //MaagSpiDevice(spi_host_device_t host_, int clock_speed_hz_, gpio_num_t cs_gpio_nr_);
     
-    // create a SPI device and connect it to a spi-host
+    // Create a SPI device and connect it to a spi-host. Initialize chip-select
     esp_err_t initDevice(spi_host_device_t host_, int clock_speed_hz_, gpio_num_t cs_gpio_nr_);
     // write to spi device
     esp_err_t write_bytes(uint8_t *out_data_, uint8_t out_data_size_);

@@ -1,5 +1,14 @@
 /*
 
+
+
+    - NixieTime:
+        - cleanup LE gpio because that one isn't needed anymore
+        - cleanup main heavily
+        - guess a sequence (latch, write, etc)
+        - get the timezone working correctly...
+
+
     - SPI interface Framework
         - host: 
             - pass Init-parameters in constructor, init function used as init() without params
@@ -9,6 +18,8 @@
             - make write_bytes a bit more fool proof --> check pointer for NULL, check length etc.
             - write_bytes() --> check if we can get a interrupt style working...
 
+
+    - everywhere we have create-Tasks: put VTaskDelayUntil for more synch
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
@@ -111,7 +122,7 @@ extern "C" void app_main()
     DS3231 ds3231(i2c.getPort());
     // =====================================================================
     // SNTP
-    // create sntp instance. sntp service must not be started here because it is started in nixieTiem instance
+    // create sntp instance. sntp service must not be started here because it is started in nixieTime instance
     MaagSNTP sntp;
     // =====================================================================
     // Nixie Time
@@ -120,40 +131,24 @@ extern "C" void app_main()
     // start a synchronisation task that will try and synch esp-time to ds3231 time
     nixieTime.createSynchTask(2,NIXIE_TIME_DS3231_AS_MASTER,30000,1);
 
-
-
     // =====================================================================
     // SPI
-    // create a host
+    // create a spi host
     MaagSpiHost spi;
     spi.initHost(SPI2_HOST,GPIO_NUM_19, GPIO_NUM_23,GPIO_NUM_18);
-    // create a standard spi device, connect to host
-    // MaagSpiDevice mux;
-    // mux.initDevice(spi.getHostDevice(),10000,GPIO_NUM_5);
 
     // create an hv5622 spi device
     NixieHv5622 hv5622;
     hv5622.initDevice(spi.getHostDevice(),10000,GPIO_NUM_5);
-
-
-   // NixieHv5622 hv5622;
-
-
-
-    /* SPI	MOSI	MISO	CLK	    CS
-    VSPI	GPIO 23	GPIO 19	GPIO 18	GPIO 5
-    */
+    hv5622.initGpios(GPIO_NUM_20, GPIO_NUM_21, GPIO_NUM_22);
 
 
     while (true)
     {
 
-        //ESP_LOGE(TAG, "trying to write something on spi bus");
-        uint8_t data[2] = {0xB3,0x7C};
-        hv5622.select();
-        hv5622.write_bytes(data, 2*8);        
-        hv5622.release();
-        // ESP_LOGE(TAG, "Main doing shit all :)");
+        hv5622.writeTimeToHv5622(nixieTime.getEspTime());
+        
+
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
 
