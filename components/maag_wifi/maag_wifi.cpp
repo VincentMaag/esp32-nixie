@@ -236,6 +236,8 @@ void MaagWifi::sta_auto_connect_task(void *pArgs)
 {
 	// cast ragument pointer to what we know it is because we pass the "this" pointer when creating FreeRtos Task!
 	MaagWifi *pMaagWifi = (MaagWifi *)pArgs;
+	// Timekeeping
+	TickType_t previousWakeTime = xTaskGetTickCount();
 
 	while (1)
 	{
@@ -243,15 +245,9 @@ void MaagWifi::sta_auto_connect_task(void *pArgs)
 		{
 			ESP_LOGW(TAG, "caught disconnected esp. Trying a connection routine...");
 			pMaagWifi->wifi_try_connect_sta();
-			// wait a bit if we catch a disconnetced esp
-			// vTaskDelay((5000 / portTICK_PERIOD_MS));
-			// // if still disconnected, try and connect
-			// if (pMaagWifi->getConnectionStatus() == false)
-			// {
-			//     pMaagWifi->wifi_try_connect_sta();
-			// }
 		}
-		vTaskDelay((pMaagWifi->m_autoConnectTasTicksToDelay / portTICK_PERIOD_MS));
+
+		xTaskDelayUntil(&previousWakeTime,(pMaagWifi->m_autoConnectTasTicksToDelay / portTICK_PERIOD_MS));
 	}
 }
 

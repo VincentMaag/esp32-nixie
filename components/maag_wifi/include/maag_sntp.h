@@ -15,7 +15,7 @@ private:
     // static init counter
     static uint8_t ui8firstInit;
     // desired interval
-    uint32_t m_ui32interval_ms;
+    uint32_t m_ui32interval_ms = 60000;
     // default, static callback function which just prints system time, if system time has been synchronized via sntp server
     static void defaultSyncNotificationCb(struct timeval *tv);
 

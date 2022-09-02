@@ -17,6 +17,11 @@
 #include "nixie_ds3231.h"
 
 typedef enum {
+    ESP_TIME_GMT = 0,
+    ESP_TIME_LOCAL
+} esp_time_zone_t;
+
+typedef enum {
     NIXIE_TIME_ESP_AS_MASTER = 0,
     NIXIE_TIME_DS3231_AS_MASTER
 } nixie_time_master_t;
@@ -29,15 +34,20 @@ private:
     MaagSNTP &m_sntp;
     // reference to our ds3231 objetc, with which we can get our RTC time
     DS3231 &m_ds3231;
-    // current esp system time
+    // current esp system time (GMT)
     struct tm m_espTime = {};
+    // current local esp system time (defined by timezone)
+    struct tm m_espLocalTime = {};
+    //
     char m_strftime_buf_esp[64] = {'\0'};
     // current ds3231 time
     struct tm m_ds3231Time = {};
     char m_strftime_buf_ds3231[64] = {'\0'};
-    // synchTask arguments
-    time_t m_synchTaskAllowedTimeDiff = 0; 
+    // allowed time difference in [s]
+    time_t m_synchTaskAllowedTimeDiff = 0;
+    // who is master 
     nixie_time_master_t m_synchTaskMaster = NIXIE_TIME_DS3231_AS_MASTER;
+    // time between synch between master and slave in [ms]
     TickType_t m_synchTaskticksToDelay = 4000;
     // our esp32 synchronisation task that will do its job in the backgorund
     static void nixie_time_task(void * pArgs);
@@ -67,9 +77,11 @@ public:
     // syncronize Times between esp and ds3231. <Parameter>-Source will set <other>-Source
     esp_err_t synchTime(nixie_time_master_t master_);
     // get current esp time
-    struct tm getEspTime();
+    struct tm getEspTime(esp_time_zone_t zone_);
+    // set Timezone
+    void setTimeZone();
     // get current esp time as a char pointer
-    char *getEspTimeAsString();
+    char *getEspTimeAsString(esp_time_zone_t zone_);
     // get current ds3231 time
     struct tm getDs3231Time();
     // get current ds3231 time as a char pointer

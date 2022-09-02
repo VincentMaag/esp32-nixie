@@ -12,7 +12,7 @@
 // static TAG
 static const char *TAG = "nixie_time";
 // we need this one for our static callback function that is passed to sntp instance
-NixieTime* NixieTime::m_staticThis;
+NixieTime *NixieTime::m_staticThis;
 
 // =============================================================================================================
 // CLASS NixieTime
@@ -20,23 +20,42 @@ NixieTime* NixieTime::m_staticThis;
 NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231(ds3231_)
 {
 	ESP_LOGW(TAG, "NixieTime Instance created");
-
 	// lol, set our non-static this pointer to a static one, so that we can use it in a static callback
 	// function that is handled in another class-instance ;)
 	NixieTime::pointToThisInstance();
-	//
 	// initialize sntp with our custom static callback and start sntp service
-	m_sntp.setSynchInterval(60000);
+	// m_sntp.setSynchInterval(60000); // lets set this one outside of nixieTime!
 	m_sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
-    m_sntp.initStart();
+	m_sntp.initStart();
+	// set timezone
+	NixieTime::setTimeZone();
 }
 
-struct tm NixieTime::getEspTime()
+void NixieTime::setTimeZone()
+{
+	setenv("TZ", "MEZ-1MESZ", 1);
+	tzset();
+}
+
+struct tm NixieTime::getEspTime(esp_time_zone_t zone_)
 {
 	struct timeval now = {};
 	gettimeofday(&now, NULL);
-	localtime_r(&(now.tv_sec), &m_espTime);
-	return m_espTime;
+	if (zone_ == ESP_TIME_LOCAL)
+	{
+		localtime_r(&(now.tv_sec), &m_espLocalTime);
+		//ESP_LOGE(TAG, "Got local time");
+		return m_espLocalTime;
+	}
+	else if(zone_ == ESP_TIME_GMT)
+	{
+		gmtime_r(&(now.tv_sec), &m_espTime);
+		//ESP_LOGE(TAG, "Got GMT time");
+		return m_espTime;
+	}else{
+		struct tm empty = {};
+		return empty;
+	}
 }
 
 struct tm NixieTime::getDs3231Time()
@@ -45,29 +64,33 @@ struct tm NixieTime::getDs3231Time()
 	return m_ds3231Time;
 }
 
-char *NixieTime::getEspTimeAsString()
+char *NixieTime::getEspTimeAsString(esp_time_zone_t zone_)
 {
-	NixieTime::getEspTime();
-	strftime(m_strftime_buf_esp, sizeof(m_strftime_buf_esp), "%c", &m_espTime);
+	struct tm espTime = NixieTime::getEspTime(zone_);
+	strftime(m_strftime_buf_esp, sizeof(m_strftime_buf_esp), "%c", &espTime);
 	return m_strftime_buf_esp;
 }
 
 char *NixieTime::getDs3231TimeAsString()
 {
-	NixieTime::getDs3231Time();
-	strftime(m_strftime_buf_ds3231, sizeof(m_strftime_buf_ds3231), "%c", &m_ds3231Time);
+	struct tm ds3231Time = NixieTime::getDs3231Time();
+	strftime(m_strftime_buf_ds3231, sizeof(m_strftime_buf_ds3231), "%c", &ds3231Time);
 	return m_strftime_buf_ds3231;
 }
 
-esp_err_t NixieTime::synchTime(nixie_time_master_t master_){
+esp_err_t NixieTime::synchTime(nixie_time_master_t master_)
+{
 
 	// if esp is chosen as Master, then we set ds3231 time equal to esp system time
 	// Vise versa if ds3231 has been chosen as Master
-	if(master_ == NIXIE_TIME_ESP_AS_MASTER){
+	if (master_ == NIXIE_TIME_ESP_AS_MASTER)
+	{
 		// get esp time, set ds3231 time
-		m_ds3231.setTime(NixieTime::getEspTime());
+		m_ds3231.setTime(NixieTime::getEspTime(ESP_TIME_GMT));
 		ESP_LOGI(TAG, "DS3231 time has been synchronized to ESP-System time");
-	}else if(master_ == NIXIE_TIME_DS3231_AS_MASTER){
+	}
+	else if (master_ == NIXIE_TIME_DS3231_AS_MASTER)
+	{
 		// get ds3231 time
 		NixieTime::getDs3231Time();
 		// prepare temp variable
@@ -85,7 +108,7 @@ esp_err_t NixieTime::synchTime(nixie_time_master_t master_){
 time_t NixieTime::getTimeDifference()
 {
 	// get current Times
-	NixieTime::getEspTime();
+	NixieTime::getEspTime(ESP_TIME_GMT);
 	NixieTime::getDs3231Time();
 	// calculate difference in s
 	time_t esp_time_t = mktime(&m_espTime);
@@ -96,21 +119,25 @@ time_t NixieTime::getTimeDifference()
 esp_err_t NixieTime::synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_time_master_t master_)
 {
 	time_t timeDiff = NixieTime::getTimeDifference();
-	if(timeDiff > abs(allowedTimeDiff_)){
+	if (timeDiff > abs(allowedTimeDiff_))
+	{
 		// if times are not syncronized, we set esp equal to ds3231 because we trust
 		// ds3231 more. Of course this only holds if ds3231 has not been reset
-		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference of %ld. Attempting to syncronize time",timeDiff);
+		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference of %ld. Attempting to syncronize time", timeDiff);
 		return NixieTime::synchTime(master_);
-	}else{
+	}
+	else
+	{
 		// if difference is not greater than user argument, do nothing
-		ESP_LOGW(TAG, "ESP-System and DS3231 time have a difference which is in the boundaries of %ld. No syncronization needed.",allowedTimeDiff_);
+		ESP_LOGI(TAG, "ESP-System and DS3231 time have a difference which is in the boundaries of %ld. No syncronization needed.", allowedTimeDiff_);
 		return ESP_OK;
 	}
 	return ESP_FAIL;
 }
-    
- esp_err_t NixieTime::createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_){
-	
+
+esp_err_t NixieTime::createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_)
+{
+
 	// copy parameters to our member variables. These will be visible in the nixie time task because we pass the "this" pointer when creating a FreeRtos Task!
 	m_synchTaskAllowedTimeDiff = synchTaskAllowedTimeDiff_;
 	m_synchTaskMaster = synchTaskMaster_;
@@ -119,40 +146,37 @@ esp_err_t NixieTime::synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_ti
 	xTaskCreatePinnedToCore(NixieTime::nixie_time_task, "nixie_time_task", 4000, this, 0, NULL, xCoreID_);
 	ESP_LOGI(TAG, "nixie_time_task created");
 	return ESP_OK;
+}
 
- }
-
- void NixieTime::nixie_time_task(void *pArgs)
- {
-	 const static char *TAG2 = "nixie_time_task";
-	 // cast my argument to what I know it is, because we created the task and past "this" as the argument pointer
-	 NixieTime *pNixieTime = (NixieTime *)pArgs;
-
-	 while (1)
-	 {
+void NixieTime::nixie_time_task(void *pArgs)
+{
+	const static char *TAG2 = "nixie_time_task";
+	// cast my argument to what I know it is, because we created the task and past "this" as the argument pointer
+	NixieTime *pNixieTime = (NixieTime *)pArgs;
+	// Timekeeping
+	TickType_t previousWakeTime = xTaskGetTickCount();
+	while (1)
+	{
 		// check to synchronize
-		// --> we could also use m_staticThis actually... put hey, there are always multiple ways to solve problems!
-		 pNixieTime->synchTimeIfDiffLargerThan(pNixieTime->getSynchTaskAllowedTimeDiff(), pNixieTime->getSynchTaskMaster());
-		 // log
-		 pNixieTime->logTimes();
-		 // wait for next round
-		 vTaskDelay((pNixieTime->getSynchTaskticksToDelay() / portTICK_PERIOD_MS));
-	 }
- }
-
+		pNixieTime->synchTimeIfDiffLargerThan(pNixieTime->getSynchTaskAllowedTimeDiff(), pNixieTime->getSynchTaskMaster());
+		// log
+		pNixieTime->logTimes();
+		// wait for next round
+		xTaskDelayUntil(&previousWakeTime, (pNixieTime->getSynchTaskticksToDelay() / portTICK_PERIOD_MS));
+	}
+}
 
 void NixieTime::nixieTimeSNTPSyncNotificationCb(struct timeval *tv)
 {
 	// sntp has thrown callback for a time synch event
-	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/time is: %s", m_staticThis->getEspTimeAsString());
+	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/times are: GMT %s, Local %s", m_staticThis->getEspTimeAsString(ESP_TIME_GMT), m_staticThis->getEspTimeAsString(ESP_TIME_LOCAL));
 	// ok, now lets synchronize ds3231 with esp time because we now have the correct time!
 	m_staticThis->synchTime(NIXIE_TIME_ESP_AS_MASTER);
 	// log
 	m_staticThis->logTimes();
 }
 
-
 void NixieTime::logTimes()
 {
-	ESP_LOGW(TAG, "ESP-SYSTEM TIME: %s === DS3231-DEVICE TIME: %s", NixieTime::getEspTimeAsString(), NixieTime::getDs3231TimeAsString());
+	ESP_LOGI(TAG, "ESP-SYSTEM TIME, LOCAL: %s === GMT: %s === DS3231-DEVICE TIME: %s", NixieTime::getEspTimeAsString(ESP_TIME_GMT), NixieTime::getEspTimeAsString(ESP_TIME_LOCAL), NixieTime::getDs3231TimeAsString());
 }

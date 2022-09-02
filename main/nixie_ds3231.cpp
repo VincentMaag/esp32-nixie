@@ -7,6 +7,8 @@
 #include <string.h>
 #include "esp_system.h"
 #include "esp_log.h"
+#include <time.h>
+#include <sys/time.h>
 
 #include "nixie_ds3231.h"
 
@@ -117,11 +119,11 @@ esp_err_t DS3231::setTime(struct tm time_)
 
 esp_err_t DS3231::setTimeToEspSystemTime()
 {
-	// get esp32 system time
-	time_t now = 0;
-	time(&now);
+	struct timeval now = {};
+	gettimeofday(&now, NULL);
 	struct tm espTime = {};
-	localtime_r(&now, &espTime);
+	// localtime_r(&(now.tv_sec), &espTime);
+	gmtime_r(&(now.tv_sec), &espTime);
 	// set ds3231 time
 	return DS3231::setTime(espTime);
 }

@@ -34,21 +34,16 @@ private:
     static void default_http_serve(struct netconn *conn, void *pArgs);
     // variable to store function pointer type
     static http_serve_function httpServeFunc; 
-    // pointer for our http_serve function arguments
-    static void *m_pHttp_serve_args;
-    // a default argument for default_http_serve
-    static int m_iDefaultArg;
+    //static int m_iDefaultArg;
+    int m_newDefaultArg = 0;
     // some event queue stuff
     static QueueHandle_t m_client_queue;
     static const int m_client_queue_size;
 
 public:
-    MaagWebserver(/* args */);
-    ~MaagWebserver();
+    MaagWebserver();
     // set http_server function which will handle http POST/GET requests. Pass the desired function pointer
     void setHttpServeFunc(http_serve_function pHttpServeFunc);
-    // set http_server argument pointer to desired data, passed as void pointer into this function!
-    void setHttpServeArgs(void *pHttpServeArgs);
     // create and start the http server on the desired Core (0 or 1)
     void createServer(BaseType_t xCoreID);
 };

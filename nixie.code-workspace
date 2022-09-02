@@ -137,7 +137,8 @@
 			"variant": "cpp",
 			"fb_wifi.h": "c",
 			"*.inc": "cpp",
-			"pthread.h": "c"
+			"pthread.h": "c",
+			"ds3231.h": "c"
 		}
 	}
 }

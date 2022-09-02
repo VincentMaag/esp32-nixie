@@ -25,31 +25,21 @@
 // static TAG
 static const char *TAG = "nixie_webserver";
 
-// static member variables
-nixie_webserver_data_t NixieWebserver::m_data;
-
 // =============================================================================================================
 // CLASS NixieWebserver
 // =============================================================================================================
 
 NixieWebserver::NixieWebserver(/* args */)
 {
-	ESP_LOGW(TAG, "NixieWebserver instance created, setting specific http_serve function & arguments...");
+	ESP_LOGW(TAG, "NixieWebserver instance created, setting specific http_serve function...");
 	// init data
 	m_data.ui16HttpRequestCounter = 0;
 	// init all user data here
 	// ...
 	
-	// point function and arguments in the right direction
-	setHttpServeArgs((void *)&m_data);
+	// point function in the right direction
 	setHttpServeFunc(nixie_http_serve);
 }
-
-NixieWebserver::~NixieWebserver()
-{
-	ESP_LOGE(TAG, "NixieWebserver instance destroid");
-}
-
 
 // nixie-specific implementation of http_server
 void NixieWebserver::nixie_http_serve(struct netconn *conn, void *pArgs)
@@ -57,10 +47,11 @@ void NixieWebserver::nixie_http_serve(struct netconn *conn, void *pArgs)
 	const static char *TAG2 = "nixie_http_serve";
 
 	// get our arguments and cast them to what we know they are:
-	nixie_webserver_data_t *pPassedArgs = (nixie_webserver_data_t *)pArgs;
+	NixieWebserver *pNixieWebserver = (NixieWebserver *)pArgs;
 
 	// communication count
-	pPassedArgs->ui16HttpRequestCounter++;
+	pNixieWebserver->m_data.ui16HttpRequestCounter++;
+	//ESP_LOGW(TAG2, "Current Communication Count with default webserver: %i", pNixieWebserver->m_data.ui16HttpRequestCounter);
 
 	const static char HTML_HEADER[] = "HTTP/1.1 200 OK\nAccess-Control-Allow-Origin: *\nContent-type: text/html\n\n";
 	const static char JS_HEADER[] = "HTTP/1.1 200 OK\nContent-type: text/javascript\n\n";

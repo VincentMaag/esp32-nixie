@@ -8,6 +8,8 @@
 #include <math.h>
 #include "esp_system.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "nixie_hv5622.h"
 
@@ -22,17 +24,16 @@ NixieHv5622::NixieHv5622()
 	ESP_LOGW(TAG, "NixieHv5622 instance created");
 }
 
-void NixieHv5622::initGpios(gpio_num_t gpio_le_nr_, gpio_num_t gpio_bl_nr_, gpio_num_t gpio_pol_nr_)
+void NixieHv5622::initGpios(gpio_num_t gpio_bl_nr_, gpio_num_t gpio_pol_nr_)
 {
-	// init all 3 gpio's and set them accordingly
-	m_gpio_LE.initAsOutput(gpio_le_nr_, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_ENABLE);
+	// init gpios
 	m_gpio_BL.initAsOutput(gpio_bl_nr_, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_ENABLE);
 	m_gpio_POL.initAsOutput(gpio_pol_nr_, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_ENABLE);
-	// set Latch to low
-	m_gpio_LE.setOutput(0);
 	// set Blank and polarity high
 	m_gpio_BL.setOutput(1);
 	m_gpio_POL.setOutput(1);
+	// just to make sure, set chip select to low, becasue it is our latch
+	MaagSpiDevice::select();
 }
 
 uint8_t NixieHv5622::getDigit(uint32_t number_, uint8_t n_)
@@ -104,26 +105,6 @@ uint64_t NixieHv5622::timeTo64BitSequence(struct tm time_)
 	return sequenceManipulated;
 }
 
-esp_err_t NixieHv5622::writeTimeToHv5622(struct tm time_)
-{
-
-	// convert time to 64 bits sequence
-	uint64_t sequence = NixieHv5622::timeTo64BitSequence(time_);
-	// make sure levels are correct and latch is not on
-	m_gpio_POL.setOutput(1);
-	m_gpio_BL.setOutput(1);
-	m_gpio_LE.setOutput(0);
-	// chip-select could also just be latch...
-	NixieHv5622::select();
-	// write this sequence to spi bus
-	esp_err_t ok = NixieHv5622::write_bytes((uint8_t *)&sequence, 64);
-	// activate by pulling latch high
-	m_gpio_LE.setOutput(1);
-	NixieHv5622::release();
-	// ESP_LOGE(TAG, "total sequence: %llu", sequence);
-	return ESP_OK;
-}
-
 uint8_t NixieHv5622::reverseBits(uint8_t b)
 {
 	b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
@@ -156,4 +137,25 @@ uint64_t NixieHv5622::reverseBitsOf8Bytes(uint64_t ui64EightBytes_)
 	}
 	// cast our peak pointer to a 64bit pointer and return value at said memory address
 	return *((uint64_t *)pPeak);
+}
+
+esp_err_t NixieHv5622::writeTimeToHv5622(struct tm time_)
+{
+	// convert time to 64 bits sequence
+	uint64_t sequence = NixieHv5622::timeTo64BitSequence(time_);
+	// polarity and blank are set high
+	m_gpio_POL.setOutput(1);
+	m_gpio_BL.setOutput(1);
+	// chip-select, which is our latch, is set low
+	NixieHv5622::select();
+	// just to be sure, wait a very short time
+	vTaskDelay(1);
+	// write the bit sequence sequence to spi bus
+	esp_err_t ok = NixieHv5622::write_bytes((uint8_t *)&sequence, 64);
+	// wait again
+	vTaskDelay(1);
+	// activate by pulling latch high
+	NixieHv5622::release();
+	// ESP_LOGE(TAG, "total sequence: %llu", sequence);
+	return ESP_OK;
 }

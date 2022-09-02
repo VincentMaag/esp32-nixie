@@ -1,31 +1,20 @@
 /*
 
-
+    - Webserver:
 
     - NixieTime:
-        - cleanup LE gpio because that one isn't needed anymore
-        - cleanup main heavily
-        - guess a sequence (latch, write, etc)
-        - get the timezone working correctly...
+        (- get the timezone working correctly...)
+        - put sntp instance into NixieTime class
+        - make a nixieTime::function to initialize and start sntp service
+        - make a nixieTime::function to stop sntp service
+        - make a nixieTime::function to set esp time manually. When doing this, set ds3231 time accordingly.
+            --> to manualy set time: get it as struct, get current local time, change s, min, hour etc., the try and set with settimeofday
 
 
-    - SPI interface Framework
-        - host: 
-            - pass Init-parameters in constructor, init function used as init() without params
-            - pass relevant configuration information --> max transfer size
-        - device:
-            - pass Init-parameters in constructor, init function used as init() without params
-            - make write_bytes a bit more fool proof --> check pointer for NULL, check length etc.
-            - write_bytes() --> check if we can get a interrupt style working...
-
-
-    - everywhere we have create-Tasks: put VTaskDelayUntil for more synch
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
 
-
-    - wifi: use the "this" way to pass the object into a FreeRtos Task. Do this in http_serve task for wifi!
 
 
     - find out how to turn on optimiziation of compiler and experiment with it
@@ -65,7 +54,6 @@
 
 #include "nixie_hv5622.h"
 
-
 static const char *TAG = "main";
 
 extern "C" void app_main()
@@ -82,7 +70,7 @@ extern "C" void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    
+
     // not sure why i added next lines...
     // ESP_LOGI(TAG, "Initializing netif");
     // ESP_ERROR_CHECK(esp_netif_init());
@@ -101,13 +89,11 @@ extern "C" void app_main()
     wifi.createSTAAutoConnectTask(5000, 0);
     // =====================================================================
     // webserver object
-    // MaagWebserver webserver;
-    // webserver.createServer(0);
     NixieWebserver webserver;  // create webserver object
     webserver.createServer(0); // start webserver --> create freRtos tasks
     // =====================================================================
-    // GPIO's
-    GpioInput gpioIn(GPIO_NUM_14,GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE);
+    // GPIO's --> just testcode
+    // GpioInput gpioIn(GPIO_NUM_14, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE);
     // GpioOutput gpioOut(GPIO_NUM_5, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
     // gpioOut.setOutput(true);
     // gpio2.setOutput(true);
@@ -122,33 +108,56 @@ extern "C" void app_main()
     DS3231 ds3231(i2c.getPort());
     // =====================================================================
     // SNTP
-    // create sntp instance. sntp service must not be started here because it is started in nixieTime instance
+    // create sntp instance but don't start it yet
     MaagSNTP sntp;
+    // set the synch interval here
+    sntp.setSynchInterval(1 * 60 * 1000);
     // =====================================================================
-    // Nixie Time
-    // create nixie time instance and pass sntp & ds3231 objects as reference
+    // NIXIE TIME
+    // create nixie time instance and pass sntp & ds3231 objects as reference. Start sntp service
     NixieTime nixieTime(sntp, ds3231);
     // start a synchronisation task that will try and synch esp-time to ds3231 time
-    nixieTime.createSynchTask(2,NIXIE_TIME_DS3231_AS_MASTER,30000,1);
+    nixieTime.createSynchTask(2, NIXIE_TIME_DS3231_AS_MASTER, 30 * 1000, 1);
+    /* Notes:
+        - use nixieTime.getEspTime(ESP_TIME_LOCAL) for getting time. Although ESP_TIME_GMT gives the same value
+        after we se a timezone. I honestly have no idea why they are the same. But who cares. Synchronizing between
+        esp and ds3231 is done in GMT time. Somehow it works, do not ask me how.
 
+    */
     // =====================================================================
     // SPI
-    // create a spi host
+    // create a spi host with miso, mosi, clk
     MaagSpiHost spi;
-    spi.initHost(SPI2_HOST,GPIO_NUM_19, GPIO_NUM_23,GPIO_NUM_18);
-
+    spi.initHost(SPI2_HOST, GPIO_NUM_19, GPIO_NUM_23, GPIO_NUM_18);
     // create an hv5622 spi device
     NixieHv5622 hv5622;
-    hv5622.initDevice(spi.getHostDevice(),10000,GPIO_NUM_5);
-    hv5622.initGpios(GPIO_NUM_20, GPIO_NUM_21, GPIO_NUM_22);
+    // init the device and connect to a host. Set clk frequency
+    hv5622.initDevice(spi.getHostDevice(), 10000, GPIO_NUM_5);
+    // initialize gpios needed for hv5622 coomunication
+    hv5622.initGpios(GPIO_NUM_20, GPIO_NUM_21);
 
 
+
+
+
+
+    // TickType_t previousWakeTime = xTaskGetTickCount();
     while (true)
     {
-
-        hv5622.writeTimeToHv5622(nixieTime.getEspTime());
         
+        hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        // ESP_LOGI(TAG, "Setting esp to 0 and syncronizing ds3231");
+        
+        // struct tm tm_ = {};
+        // struct timeval now = {};
+		// // refactor tm into time_t, set seconds of timeval
+		// now.tv_sec = mktime(&tm_);
+		// // set esp32 system time
+		// settimeofday(&now, NULL);
+        // nixieTime.synchTime(NIXIE_TIME_ESP_AS_MASTER);
 
+        ESP_LOGE(TAG, "Main Looping");
+        // xTaskDelayUntil(&previousWakeTime,(pMaagWifi->m_autoConnectTasTicksToDelay / portTICK_PERIOD_MS));
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
 
