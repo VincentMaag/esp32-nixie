@@ -33,24 +33,41 @@ NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231
 
 void NixieTime::setTimeZone()
 {
-	setenv("TZ", "MEZ-1MESZ", 1);
-	tzset();
+	// setenv("TZ", "MEZ-1MESZ", 1);
+	// setenv("TZ", "GMT0BST", 1);
+	// tzset();
 }
 
 struct tm NixieTime::getEspTime(esp_time_zone_t zone_)
 {
-	struct timeval now = {};
-	gettimeofday(&now, NULL);
+
+	time_t now_as_time_t = time(0);
+	//struct timeval now = {};
+	//gettimeofday(&now, NULL);
+
 	if (zone_ == ESP_TIME_LOCAL)
 	{
-		localtime_r(&(now.tv_sec), &m_espLocalTime);
-		//ESP_LOGE(TAG, "Got local time");
+		// to get our local time, we manipulate system time,
+		// which should actually be gmt. localtime_r() should give us
+		// a local time set by timezone, but I can't get that to work because setting a timezone
+		// messes up all kinds of stuff. So we cheat and have a simple offset here in [s]
+
+		// so add our offset to our esp system time
+		now_as_time_t = now_as_time_t + m_local_time_offset;
+		// now convert that to a time struct
+		gmtime_r(&now_as_time_t, &m_espLocalTime);
+
+		// localtime_r(&(now.tv_sec), &m_espLocalTime);
+		// localtime_r(&now_as_time_t, &m_espLocalTime);
+		
+		// ESP_LOGE(TAG, "Got local time");
 		return m_espLocalTime;
 	}
 	else if(zone_ == ESP_TIME_GMT)
 	{
-		gmtime_r(&(now.tv_sec), &m_espTime);
-		//ESP_LOGE(TAG, "Got GMT time");
+		// gmtime_r(&(now.tv_sec), &m_espTime);
+		gmtime_r(&now_as_time_t, &m_espTime);
+		// ESP_LOGE(TAG, "Got GMT time");
 		return m_espTime;
 	}else{
 		struct tm empty = {};
@@ -67,8 +84,8 @@ struct tm NixieTime::getDs3231Time()
 char *NixieTime::getEspTimeAsString(esp_time_zone_t zone_)
 {
 	struct tm espTime = NixieTime::getEspTime(zone_);
-	strftime(m_strftime_buf_esp, sizeof(m_strftime_buf_esp), "%c", &espTime);
-	return m_strftime_buf_esp;
+	strftime(m_strftime_buf_esp[zone_], sizeof(m_strftime_buf_esp), "%c", &espTime);
+	return m_strftime_buf_esp[zone_];
 }
 
 char *NixieTime::getDs3231TimeAsString()
@@ -169,7 +186,8 @@ void NixieTime::nixie_time_task(void *pArgs)
 void NixieTime::nixieTimeSNTPSyncNotificationCb(struct timeval *tv)
 {
 	// sntp has thrown callback for a time synch event
-	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/times are: GMT %s, Local %s", m_staticThis->getEspTimeAsString(ESP_TIME_GMT), m_staticThis->getEspTimeAsString(ESP_TIME_LOCAL));
+
+	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/times are: LOCAL %s, GMT %s", m_staticThis->getEspTimeAsString(ESP_TIME_LOCAL), m_staticThis->getEspTimeAsString(ESP_TIME_GMT));
 	// ok, now lets synchronize ds3231 with esp time because we now have the correct time!
 	m_staticThis->synchTime(NIXIE_TIME_ESP_AS_MASTER);
 	// log
@@ -178,5 +196,19 @@ void NixieTime::nixieTimeSNTPSyncNotificationCb(struct timeval *tv)
 
 void NixieTime::logTimes()
 {
-	ESP_LOGI(TAG, "ESP-SYSTEM TIME, LOCAL: %s === GMT: %s === DS3231-DEVICE TIME: %s", NixieTime::getEspTimeAsString(ESP_TIME_GMT), NixieTime::getEspTimeAsString(ESP_TIME_LOCAL), NixieTime::getDs3231TimeAsString());
+	ESP_LOGI(TAG, "ESP-SYSTEM TIME, LOCAL: %s === GMT: %s === DS3231-DEVICE TIME: %s", NixieTime::getEspTimeAsString(ESP_TIME_LOCAL), NixieTime::getEspTimeAsString(ESP_TIME_GMT), NixieTime::getDs3231TimeAsString());	
+	// struct tm gmt = NixieTime::getEspTime(ESP_TIME_GMT);
+	// struct tm local = NixieTime::getEspTime(ESP_TIME_LOCAL);
+	// struct tm ds3231 = NixieTime::getDs3231Time();
+	// ESP_LOGI(TAG, "ESP-SYSTEM TIME, GMT hh: %i === LOCAL hh: %i === DS3231-DEVICE TIME hh: %i", gmt.tm_hour, local.tm_hour, ds3231.tm_hour);
+
 }
+
+esp_err_t NixieTime::setLocalTimeOffset(int offset_)
+{
+	m_local_time_offset = offset_;
+	return ESP_OK;
+}
+
+
+

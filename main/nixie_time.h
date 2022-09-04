@@ -39,10 +39,12 @@ private:
     // current local esp system time (defined by timezone)
     struct tm m_espLocalTime = {};
     //
-    char m_strftime_buf_esp[64] = {'\0'};
+    char m_strftime_buf_esp[2][64] = {{}, {'\0'}};
     // current ds3231 time
     struct tm m_ds3231Time = {};
     char m_strftime_buf_ds3231[64] = {'\0'};
+    // current local time offset in [s]
+    int m_local_time_offset = 0;
     // allowed time difference in [s]
     time_t m_synchTaskAllowedTimeDiff = 0;
     // who is master 
@@ -94,6 +96,8 @@ public:
     esp_err_t createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_);   
     // get and log esp and ds3231 times in terminal
     void logTimes();
+    // set local time offset to gmt time
+    esp_err_t setLocalTimeOffset(int offset_);
 };
 
 #endif /* __NIXIE_TIME_H__ */

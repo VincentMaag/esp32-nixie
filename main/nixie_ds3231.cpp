@@ -93,7 +93,7 @@ struct tm DS3231::getTime()
 	m_ds3231Time.tm_mday = DS3231::bcd2dec(data[4]);
 	m_ds3231Time.tm_mon = DS3231::bcd2dec(data[5] & DS3231_MONTH_MASK) - 1;
 	m_ds3231Time.tm_year = DS3231::bcd2dec(data[6]) + 0;
-	m_ds3231Time.tm_isdst = 0;
+	m_ds3231Time.tm_isdst = 1;
 
 	return m_ds3231Time;
 }

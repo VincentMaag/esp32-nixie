@@ -110,13 +110,15 @@ extern "C" void app_main()
     // SNTP
     // create sntp instance but don't start it yet
     MaagSNTP sntp;
-    // set the synch interval here
-    sntp.setSynchInterval(1 * 60 * 1000);
+    // set the sntp synch interval here in minutes
+    sntp.setSynchInterval(5 * 60 * 1000);
     // =====================================================================
     // NIXIE TIME
     // create nixie time instance and pass sntp & ds3231 objects as reference. Start sntp service
     NixieTime nixieTime(sntp, ds3231);
-    // start a synchronisation task that will try and synch esp-time to ds3231 time
+    // some configurations
+    nixieTime.setLocalTimeOffset(2*3600);
+    // start a synchronisation task that will try and synch esp-time to ds3231 time, in seconds
     nixieTime.createSynchTask(2, NIXIE_TIME_DS3231_AS_MASTER, 30 * 1000, 1);
     /* Notes:
         - use nixieTime.getEspTime(ESP_TIME_LOCAL) for getting time. Although ESP_TIME_GMT gives the same value
