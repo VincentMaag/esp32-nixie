@@ -1,0 +1,3 @@
+[submodule "components/maag"]
+	path = components/maag
+	url = https://github.com/VincentMaag/esp32-maag-components
