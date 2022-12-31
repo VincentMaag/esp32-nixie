@@ -79,11 +79,11 @@ extern "C" void app_main()
     // =====================================================================
     // Wifi object
     MaagWifi wifi;
-    wifi.setIP("192.168.40.140");
-    wifi.setGW("192.168.40.1");
+    wifi.setIP("192.168.178.140");
+    wifi.setGW("192.168.178.1");
     wifi.setDNS("8.8.8.8");
-    wifi.setSSID("BWSTRC14");
-    wifi.setPW("ChaesBrotWiiWurscht9497");
+    wifi.setSSID("FRITZ!Box 7583 AE 2.4 Ghz");
+    wifi.setPW("72176317897889201379");
     // maagWifi.init_ap();
     wifi.init_sta();
     wifi.createSTAAutoConnectTask(5000, 0);
@@ -150,8 +150,8 @@ extern "C" void app_main()
         fuckyouTest.tm_hour = 11;
         
 
-        hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
-        //hv5622.writeTimeToHv5622(fuckyouTest);
+        //hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        hv5622.writeTimeToHv5622(fuckyouTest);
 
         //nixieTime.logTimes();
         // ESP_LOGI(TAG, "Setting esp to 0 and syncronizing ds3231");

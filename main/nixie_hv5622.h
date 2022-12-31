@@ -22,7 +22,10 @@ private:
     GpioOutput m_gpio_BL;
     GpioOutput m_gpio_POL;
 
-    uint8_t reverseBits(uint8_t b);
+    // reverse all bits in a single byte
+    uint8_t reverse8Bits(uint8_t b);
+    // reverse all bits in a 64 bit variable
+    uint64_t reverse64Bits(uint64_t b);
     // reverse all bits if each byte in a 16bit variable
     uint16_t reverseBitsOf2Bytes(uint16_t ui16TwoBytes_);
     // reverse all bits if each byte in a 64bit variable

@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "inttypes.h"
 
 #include "nixie_hv5622.h"
 
@@ -63,11 +64,12 @@ uint64_t NixieHv5622::get64BitSequence(uint16_t *digitBitsArray_, uint8_t nrOfDi
 	for (uint8_t i = 0; i < nrOfDigits_; i++)
 	{
 		Tempbits = 0;
-		Tempbits = digitBitsArray_[i];
+		Tempbits = digitBitsArray_[nrOfDigits_-1-i];
 		bits = bits | (Tempbits << (bitsPerDigit_ * i));
 	}
 
 	//ESP_LOGE(TAG, "The Array of Bits in Order ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", digitBitsArray_[5],digitBitsArray_[4],digitBitsArray_[3],digitBitsArray_[2],digitBitsArray_[1],digitBitsArray_[0]);
+	//ESP_LOGE(TAG, "6 digit Sequence: 0x%llx", bits);
 
 
 	return bits;
@@ -82,15 +84,14 @@ uint64_t NixieHv5622::timeTo64BitSequence(struct tm time_)
 	// array to store correctly manipulated single digits as bits
 	uint16_t bitArray[nrOfDigits] = {};
 
-	// first get all single digits, starting with seconds, minutes, hours --> [h][h][min][min][s][s]
-	// we need a 16bit variable for this because there are a max of 10bits per digit
+	// first get all single digits (as numbers), starting with seconds, minutes, hours --> [h][h][min][min][s][s]
 	singleDigitArray[0] = NixieHv5622::getDigit(time_.tm_sec, 0);
 	singleDigitArray[1] = NixieHv5622::getDigit(time_.tm_sec, 1);
 	singleDigitArray[2] = NixieHv5622::getDigit(time_.tm_min, 0);
 	singleDigitArray[3] = NixieHv5622::getDigit(time_.tm_min, 1);
 	singleDigitArray[4] = NixieHv5622::getDigit(time_.tm_hour, 0);
 	singleDigitArray[5] = NixieHv5622::getDigit(time_.tm_hour, 1);
-	// ESP_LOGE(TAG, "The Array of Single digits ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", singleDigitArray[5],singleDigitArray[4],singleDigitArray[3],singleDigitArray[2],singleDigitArray[1],singleDigitArray[0]);
+	//ESP_LOGE(TAG, "The Array of Single digits ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", singleDigitArray[5],singleDigitArray[4],singleDigitArray[3],singleDigitArray[2],singleDigitArray[1],singleDigitArray[0]);
 
 	// next, we get the bit matching the digit-number: 1 = 0000 0000 0000 0001, 9 = 0000 0001 0000 0000 and so on
 	for (int i = 0; i < nrOfDigits; i++)
@@ -106,44 +107,45 @@ uint64_t NixieHv5622::timeTo64BitSequence(struct tm time_)
 	// next, I think because our chip is little endian, we need to swap every bit of each single byte
 	// so that the bits are in fact written how ea actually want them to arrive at the serial-parallel converter
 	
-	uint64_t sequenceManipulated = 101; //NixieHv5622::reverseBitsOf8Bytes(sequence);
+	uint64_t sequenceManipulated = sequence << 4; 
+	
+	uint64_t sequenceManipulated2 = NixieHv5622::reverseBitsOf8Bytes(sequenceManipulated);
+
+	ESP_LOGE(TAG, "6 digit Sequence ss:mm:hh: %llu, shifted by 4bits: %llu, corrected2BigEndian: %llu", sequence, sequenceManipulated, sequenceManipulated2);
 	
 	// ESP_LOGE(TAG, "The Reversed Sequence looks like this: %llu", sequenceManipulated);
-	
-	uint64_t sequenceManipulated2 = 0;
-	uint64_t eis = 1;
-	uint64_t temp1 = 0;
-	uint64_t temp2 = 0;
 
-	for (uint64_t i = 0; i < (uint64_t)64; i++)
-	{
-
-		//temp1 = (sequenceManipulated & (eis<<i));
-		//temp2 = temp1 << (62-i);
-
-		//sequenceManipulated2 = sequenceManipulated2 | temp2;
-
-		//ESP_LOGE(TAG, "temp1: %llu, temp2: %llu", temp1, temp2);
-		
-		sequenceManipulated2 = sequenceManipulated2 | ((sequenceManipulated & (eis<<i))<<((uint64_t)63-i));
-		//ESP_LOGE(TAG, "original: %llu, reversed: %llu", sequenceManipulated, sequenceManipulated2);
-		/* code */
-	}
 
 	//sequenceManipulated2 = 
 	
-	ESP_LOGE(TAG, "original: %llu, reversed: %llu", sequenceManipulated, sequenceManipulated2);
-	return sequenceManipulated;
+	//ESP_LOGE(TAG, "original: 0x%llx, reversed: 0x%llx", sequenceManipulated, sequenceManipulated2);
+	return sequenceManipulated2;
 	//return sequence;
 }
 
-uint8_t NixieHv5622::reverseBits(uint8_t b)
+uint8_t NixieHv5622::reverse8Bits(uint8_t b)
 {
 	b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
 	b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
 	b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
 	return b;
 }
+
+uint64_t NixieHv5622::reverse64Bits(uint64_t b)
+{
+	uint64_t reversed = 0;
+	uint64_t one64 = 1;
+	
+	for (int i = 0; i < 64; i++)
+	{		
+		reversed = reversed | (((b & (one64<<i))>>i)<<(63-i));
+	}
+
+	return b;
+}
+
+
+
 
 uint16_t NixieHv5622::reverseBitsOf2Bytes(uint16_t ui16TwoBytes_)
 {
@@ -152,8 +154,8 @@ uint16_t NixieHv5622::reverseBitsOf2Bytes(uint16_t ui16TwoBytes_)
 	// extract second byte (MSB)
 	uint8_t secondByte = (uint8_t)((ui16TwoBytes_ & 0xFF00) >> 8);
 	// reverse both bit sequences
-	uint16_t firstByteReversed = (uint16_t)NixieHv5622::reverseBits(firstByte);
-	uint16_t secondByteReversed = (uint16_t)NixieHv5622::reverseBits(secondByte);
+	uint16_t firstByteReversed = (uint16_t)NixieHv5622::reverse8Bits(firstByte);
+	uint16_t secondByteReversed = (uint16_t)NixieHv5622::reverse8Bits(secondByte);
 	// put them back together again and return result
 	return ((secondByteReversed << 8) & 0xFF00) | (firstByteReversed & 0x00FF);
 }
@@ -165,7 +167,7 @@ uint64_t NixieHv5622::reverseBitsOf8Bytes(uint64_t ui64EightBytes_)
 	// we now do the reversing on each byte seperately
 	for (uint8_t i = 0; i < 8; i++)
 	{
-		pPeak[i] = NixieHv5622::reverseBits(pPeak[i]);
+		pPeak[i] = NixieHv5622::reverse8Bits(pPeak[i]);
 	}
 	// cast our peak pointer to a 64bit pointer and return value at said memory address
 	return *((uint64_t *)pPeak);
