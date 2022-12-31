@@ -9,8 +9,8 @@
         - make a nixieTime::function to stop sntp service
         - make a nixieTime::function to set esp time manually. When doing this, set ds3231 time accordingly.
             --> to manualy set time: get it as struct, get current local time, change s, min, hour etc., the try and set with settimeofday
-
-
+        - if spi slave is not here, then do not synch esp-time with spi slave, rather just synch via sntp and leave time as it is
+        - start sntp service in a seperate function so that ios clear what is done (not in the constructor of nixie-time...)
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
@@ -79,18 +79,18 @@ extern "C" void app_main()
     // =====================================================================
     // Wifi object
     MaagWifi wifi;
-    wifi.setIP("192.168.178.140");
-    wifi.setGW("192.168.178.1");
+    wifi.setIP("192.168.40.140");
+    wifi.setGW("192.168.40.1");
     wifi.setDNS("8.8.8.8");
-    wifi.setSSID("FRITZ!Box 5490 WT");
-    wifi.setPW("55940362741817360715");
+    wifi.setSSID("BWSTRC14");
+    wifi.setPW("ChaesBrotWiiWurscht9497");
     // maagWifi.init_ap();
     wifi.init_sta();
     wifi.createSTAAutoConnectTask(5000, 0);
     // =====================================================================
     // webserver object
-    NixieWebserver webserver;  // create webserver object
-    webserver.createServer(0); // start webserver --> create freRtos tasks
+    // NixieWebserver webserver;  // create webserver object
+    // webserver.createServer(0); // start webserver --> create freRtos tasks
     // =====================================================================
     // GPIO's --> just testcode
     // GpioInput gpioIn(GPIO_NUM_14, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE);
@@ -99,7 +99,7 @@ extern "C" void app_main()
     // gpio2.setOutput(true);
     // =====================================================================
     // I2C
-    // creat a i2c port
+    // creat a i2c port for RTC
     MaagI2CPort i2c;
     i2c.initPort(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22, I2C_MODE_MASTER);
     // =====================================================================
@@ -111,15 +111,17 @@ extern "C" void app_main()
     // create sntp instance but don't start it yet
     MaagSNTP sntp;
     // set the sntp synch interval here in minutes
-    sntp.setSynchInterval(5 * 60 * 1000);
+    sntp.setSynchInterval(1 * 60 * 1000);
     // =====================================================================
     // NIXIE TIME
     // create nixie time instance and pass sntp & ds3231 objects as reference. Start sntp service
     NixieTime nixieTime(sntp, ds3231);
     // some configurations
-    nixieTime.setLocalTimeOffset(2*3600);
+    nixieTime.setLocalTimeOffset(1 * 3600);
     // start a synchronisation task that will try and synch esp-time to ds3231 time, in seconds
-    nixieTime.createSynchTask(2, NIXIE_TIME_DS3231_AS_MASTER, 30 * 1000, 1);
+
+    nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 10 * 1000, 1);
+
     /* Notes:
         - use nixieTime.getEspTime(ESP_TIME_LOCAL) for getting time. Although ESP_TIME_GMT gives the same value
         after we se a timezone. I honestly have no idea why they are the same. But who cares. Synchronizing between
@@ -128,37 +130,41 @@ extern "C" void app_main()
     */
     // =====================================================================
     // SPI
-    // create a spi host with miso, mosi, clk
+    // create a spi host with miso, mosi, clk --> HV DRIVER
     MaagSpiHost spi;
     spi.initHost(SPI2_HOST, GPIO_NUM_19, GPIO_NUM_23, GPIO_NUM_18);
     // create an hv5622 spi device
     NixieHv5622 hv5622;
     // init the device and connect to a host. Set clk frequency
-    hv5622.initDevice(spi.getHostDevice(), 10000, GPIO_NUM_5);
-    // initialize gpios needed for hv5622 coomunication
-    hv5622.initGpios(GPIO_NUM_20, GPIO_NUM_21);
-
-
-
-
-
+    hv5622.initDevice(spi.getHostDevice(), 10000, GPIO_NUM_4);
+    // initialize gpios needed for hv5622 communication
+    hv5622.initGpios(GPIO_NUM_16, GPIO_NUM_17);
 
     // TickType_t previousWakeTime = xTaskGetTickCount();
     while (true)
     {
+
+        struct tm fuckyouTest = {};
+        fuckyouTest.tm_sec = 11;
+        fuckyouTest.tm_min = 11;
+        fuckyouTest.tm_hour = 11;
         
+
         hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        //hv5622.writeTimeToHv5622(fuckyouTest);
+
+        //nixieTime.logTimes();
         // ESP_LOGI(TAG, "Setting esp to 0 and syncronizing ds3231");
-        
+
         // struct tm tm_ = {};
         // struct timeval now = {};
-		// // refactor tm into time_t, set seconds of timeval
-		// now.tv_sec = mktime(&tm_);
-		// // set esp32 system time
-		// settimeofday(&now, NULL);
+        // // refactor tm into time_t, set seconds of timeval
+        // now.tv_sec = mktime(&tm_);
+        // // set esp32 system time
+        // settimeofday(&now, NULL);
         // nixieTime.synchTime(NIXIE_TIME_ESP_AS_MASTER);
 
-        ESP_LOGE(TAG, "Main Looping");
+        ESP_LOGI(TAG, "Main Looping");
         // xTaskDelayUntil(&previousWakeTime,(pMaagWifi->m_autoConnectTasTicksToDelay / portTICK_PERIOD_MS));
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }

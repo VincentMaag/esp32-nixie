@@ -28,7 +28,7 @@ NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231
 	m_sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
 	m_sntp.initStart();
 	// set timezone
-	NixieTime::setTimeZone();
+	//NixieTime::setTimeZone();
 }
 
 void NixieTime::setTimeZone()
@@ -57,10 +57,44 @@ struct tm NixieTime::getEspTime(esp_time_zone_t zone_)
 		// now convert that to a time struct
 		gmtime_r(&now_as_time_t, &m_espLocalTime);
 
-		// localtime_r(&(now.tv_sec), &m_espLocalTime);
-		// localtime_r(&now_as_time_t, &m_espLocalTime);
+		/*
+		//setTimeZone();
+		char *tzvalue;
+    	//tzvalue = getenv( "TZ" );
+		//ESP_LOGE(TAG, "TZ: %s",tzvalue);
+		//printf(tzvalue);
+
+		setenv("TZ", "GMT0BST", 1);
+		tzset();
+		tzvalue = getenv( "TZ" );
+		ESP_LOGE(TAG, "TZ: %s",tzvalue);
 		
-		// ESP_LOGE(TAG, "Got local time");
+		// setenv("TZ", "GMT0BST", 1);
+		// tzset();
+		// tzvalue = getenv( "TZ" );
+		// ESP_LOGE(TAG, "TZ: %s",tzvalue);
+
+		// setenv("TZ", "UST", 1);
+		// tzset();
+		// tzvalue = getenv( "TZ" );
+		// ESP_LOGE(TAG, "TZ: %s",tzvalue);
+		
+		// tzvalue = getenv( "TZ" );
+		// ESP_LOGE(TAG, "TZ: %s",tzvalue);
+		
+		localtime_r(&now_as_time_t, &m_espLocalTime);
+
+		// setenv("TZ", "GMT0BST,M3.5.0/1,M10.5.0", 1);
+		// tzset();
+		// tzvalue = getenv( "TZ" );
+		// ESP_LOGE(TAG, "TZ: %s",tzvalue);
+		
+		// tzvalue = getenv( "TZ" );
+		// ESP_LOGE(TAG, "TZ: %s",tzvalue);
+		
+		*/
+
+		//ESP_LOGE(TAG, "Local hour via offset: %i, via setting timezone: %i",m_espLocalTime.tm_hour,m_espLocalTime_test.tm_hour);
 		return m_espLocalTime;
 	}
 	else if(zone_ == ESP_TIME_GMT)
@@ -154,7 +188,6 @@ esp_err_t NixieTime::synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_ti
 
 esp_err_t NixieTime::createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_)
 {
-
 	// copy parameters to our member variables. These will be visible in the nixie time task because we pass the "this" pointer when creating a FreeRtos Task!
 	m_synchTaskAllowedTimeDiff = synchTaskAllowedTimeDiff_;
 	m_synchTaskMaster = synchTaskMaster_;
@@ -196,7 +229,7 @@ void NixieTime::nixieTimeSNTPSyncNotificationCb(struct timeval *tv)
 
 void NixieTime::logTimes()
 {
-	ESP_LOGI(TAG, "ESP-SYSTEM TIME, LOCAL: %s === GMT: %s === DS3231-DEVICE TIME: %s", NixieTime::getEspTimeAsString(ESP_TIME_LOCAL), NixieTime::getEspTimeAsString(ESP_TIME_GMT), NixieTime::getDs3231TimeAsString());	
+	ESP_LOGI(TAG, "ESP-LOCAL: %s === ESP-GMT: %s === DS3231: %s", NixieTime::getEspTimeAsString(ESP_TIME_LOCAL), NixieTime::getEspTimeAsString(ESP_TIME_GMT), NixieTime::getDs3231TimeAsString());	
 	// struct tm gmt = NixieTime::getEspTime(ESP_TIME_GMT);
 	// struct tm local = NixieTime::getEspTime(ESP_TIME_LOCAL);
 	// struct tm ds3231 = NixieTime::getDs3231Time();

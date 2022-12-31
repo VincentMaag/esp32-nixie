@@ -57,6 +57,8 @@ uint64_t NixieHv5622::get64BitSequence(uint16_t *digitBitsArray_, uint8_t nrOfDi
 	uint64_t bits = 0;
 	uint64_t Tempbits = 0;
 
+	ESP_LOGE(TAG, "The Array of Bits in Order ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", digitBitsArray_[5],digitBitsArray_[4],digitBitsArray_[3],digitBitsArray_[2],digitBitsArray_[1],digitBitsArray_[0]);
+
 	// build up all single digits (as bits) to one 64 bit string
 	for (uint8_t i = 0; i < nrOfDigits_; i++)
 	{
@@ -64,6 +66,9 @@ uint64_t NixieHv5622::get64BitSequence(uint16_t *digitBitsArray_, uint8_t nrOfDi
 		Tempbits = digitBitsArray_[i];
 		bits = bits | (Tempbits << (bitsPerDigit_ * i));
 	}
+
+	//ESP_LOGE(TAG, "The Array of Bits in Order ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", digitBitsArray_[5],digitBitsArray_[4],digitBitsArray_[3],digitBitsArray_[2],digitBitsArray_[1],digitBitsArray_[0]);
+
 
 	return bits;
 }
@@ -100,9 +105,36 @@ uint64_t NixieHv5622::timeTo64BitSequence(struct tm time_)
 
 	// next, I think because our chip is little endian, we need to swap every bit of each single byte
 	// so that the bits are in fact written how ea actually want them to arrive at the serial-parallel converter
-	uint64_t sequenceManipulated = NixieHv5622::reverseBitsOf8Bytes(sequence);
+	
+	uint64_t sequenceManipulated = 101; //NixieHv5622::reverseBitsOf8Bytes(sequence);
+	
 	// ESP_LOGE(TAG, "The Reversed Sequence looks like this: %llu", sequenceManipulated);
+	
+	uint64_t sequenceManipulated2 = 0;
+	uint64_t eis = 1;
+	uint64_t temp1 = 0;
+	uint64_t temp2 = 0;
+
+	for (uint64_t i = 0; i < (uint64_t)64; i++)
+	{
+
+		//temp1 = (sequenceManipulated & (eis<<i));
+		//temp2 = temp1 << (62-i);
+
+		//sequenceManipulated2 = sequenceManipulated2 | temp2;
+
+		//ESP_LOGE(TAG, "temp1: %llu, temp2: %llu", temp1, temp2);
+		
+		sequenceManipulated2 = sequenceManipulated2 | ((sequenceManipulated & (eis<<i))<<((uint64_t)63-i));
+		//ESP_LOGE(TAG, "original: %llu, reversed: %llu", sequenceManipulated, sequenceManipulated2);
+		/* code */
+	}
+
+	//sequenceManipulated2 = 
+	
+	ESP_LOGE(TAG, "original: %llu, reversed: %llu", sequenceManipulated, sequenceManipulated2);
 	return sequenceManipulated;
+	//return sequence;
 }
 
 uint8_t NixieHv5622::reverseBits(uint8_t b)
@@ -148,14 +180,20 @@ esp_err_t NixieHv5622::writeTimeToHv5622(struct tm time_)
 	m_gpio_BL.setOutput(1);
 	// chip-select, which is our latch, is set low
 	NixieHv5622::select();
+	//NixieHv5622::release();
 	// just to be sure, wait a very short time
 	vTaskDelay(1);
 	// write the bit sequence sequence to spi bus
 	esp_err_t ok = NixieHv5622::write_bytes((uint8_t *)&sequence, 64);
 	// wait again
 	vTaskDelay(1);
-	// activate by pulling latch high
+
+	// activate by creating a "pulse" of our latch, which is the chipselect in our case
+	// --> make sure it's just a positive edge and not a constant high
 	NixieHv5622::release();
+	vTaskDelay(3);
+	NixieHv5622::select();
+
 	// ESP_LOGE(TAG, "total sequence: %llu", sequence);
 	return ESP_OK;
 }
