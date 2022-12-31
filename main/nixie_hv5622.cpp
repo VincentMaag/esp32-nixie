@@ -37,34 +37,82 @@ void NixieHv5622::initGpios(gpio_num_t gpio_bl_nr_, gpio_num_t gpio_pol_nr_)
 	MaagSpiDevice::select();
 }
 
+
+uint64_t NixieHv5622::timeTo64BitSequence(struct tm time_)
+{
+	uint8_t nrOfDigits = 6;						// we have 6 digits; hh:mm:ss
+	uint8_t digitArray[nrOfDigits] = {};	// array to store the single digits (as numbers)
+	uint16_t bitArray[nrOfDigits] = {};			// array to store correctly manipulated single digits as bits
+
+	// first, get all 6 single digits (as numbers)--> [h][h][min][min][s][s] = [5][4][3][2][1][0]
+	NixieHv5622::getTimeDigits(digitArray,time_);
+	
+	// next, we get the bit matching the digit-number: 1 = 0000 0010 0000 0000, 2 = 0000 0001 0000 0000 and so on
+	NixieHv5622::getTimeDigitsAsBits(bitArray,digitArray,nrOfDigits);
+
+	// next we build up the bits-sequence, mapping every 10 bits of each digit together to a 64bits representation
+	uint64_t sequence = NixieHv5622::get64BitSequence(bitArray, nrOfDigits, 10, 0);
+
+	// now we must shift 4 bits because these are "lost" in our specific application
+	uint64_t sequenceShifted = sequence << 4; 
+
+	// next, I think because our chip is little endian, we need to swap every bit of each single byte
+	uint64_t sequenceCorrectedEndiannes = NixieHv5622::reverseBitsOf8Bytes(sequenceShifted);
+
+	//ESP_LOGE(TAG, "6 digit Sequence ss:mm:hh: %llu, shifted by 4bits: %llu, corrected2BigEndian: %llu", sequence, sequenceManipulated, sequenceManipulated2);
+
+	return sequenceCorrectedEndiannes;
+}
+
+
+
+
+
 uint8_t NixieHv5622::getDigit(uint32_t number_, uint8_t n_)
 {
 	return (number_ / (uint32_t)powf(10, n_)) % 10;
 }
 
-uint16_t NixieHv5622::getDigitBits(uint8_t digit_)
+void NixieHv5622::getTimeDigits(uint8_t * digitArray_, struct tm time_)
 {
-
-	// digit zero is the 10th bit
-	if (digit_ < 1)
-	{
-		return 1 << 9;
-	}
-	return 1 << (digit_ - 1);
+	digitArray_[0] = NixieHv5622::getDigit(time_.tm_sec, 0);
+	digitArray_[1] = NixieHv5622::getDigit(time_.tm_sec, 1);
+	digitArray_[2] = NixieHv5622::getDigit(time_.tm_min, 0);
+	digitArray_[3] = NixieHv5622::getDigit(time_.tm_min, 1);
+	digitArray_[4] = NixieHv5622::getDigit(time_.tm_hour, 0);
+	digitArray_[5] = NixieHv5622::getDigit(time_.tm_hour, 1);
 }
 
-uint64_t NixieHv5622::get64BitSequence(uint16_t *digitBitsArray_, uint8_t nrOfDigits_, uint8_t bitsPerDigit_, uint8_t inverted_)
+uint16_t NixieHv5622::getDigitBits(uint8_t digit_)
+{
+	// digit zero is the first bit
+	if (digit_ < 1)
+	{
+		return 1;
+	}
+	return 1 << (10 - digit_);
+}
+
+void NixieHv5622::getTimeDigitsAsBits(uint16_t* bitArray_, uint8_t * digitArray_, uint8_t nrOfDigits_)
+{
+	for (int i = 0; i < nrOfDigits_; i++)
+	{
+		bitArray_[i] = NixieHv5622::getDigitBits(digitArray_[i]);
+	}
+
+}
+
+uint64_t NixieHv5622::get64BitSequence(uint16_t *bitArray_, uint8_t nrOfDigits_, uint8_t bitsPerDigit_, uint8_t inverted_)
 {
 	uint64_t bits = 0;
 	uint64_t Tempbits = 0;
 
-	ESP_LOGE(TAG, "The Array of Bits in Order ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", digitBitsArray_[5],digitBitsArray_[4],digitBitsArray_[3],digitBitsArray_[2],digitBitsArray_[1],digitBitsArray_[0]);
+	//ESP_LOGE(TAG, "The Array of Bits in Order ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", digitBitsArray_[5],digitBitsArray_[4],digitBitsArray_[3],digitBitsArray_[2],digitBitsArray_[1],digitBitsArray_[0]);
 
 	// build up all single digits (as bits) to one 64 bit string
 	for (uint8_t i = 0; i < nrOfDigits_; i++)
 	{
-		Tempbits = 0;
-		Tempbits = digitBitsArray_[nrOfDigits_-1-i];
+		Tempbits = bitArray_[nrOfDigits_-1-i];
 		bits = bits | (Tempbits << (bitsPerDigit_ * i));
 	}
 
@@ -75,53 +123,6 @@ uint64_t NixieHv5622::get64BitSequence(uint16_t *digitBitsArray_, uint8_t nrOfDi
 	return bits;
 }
 
-uint64_t NixieHv5622::timeTo64BitSequence(struct tm time_)
-{
-	// we have 6 digits hh:mm:ss
-	uint8_t nrOfDigits = 6;
-	// array to store the single digits
-	uint8_t singleDigitArray[nrOfDigits] = {};
-	// array to store correctly manipulated single digits as bits
-	uint16_t bitArray[nrOfDigits] = {};
-
-	// first get all single digits (as numbers), starting with seconds, minutes, hours --> [h][h][min][min][s][s]
-	singleDigitArray[0] = NixieHv5622::getDigit(time_.tm_sec, 0);
-	singleDigitArray[1] = NixieHv5622::getDigit(time_.tm_sec, 1);
-	singleDigitArray[2] = NixieHv5622::getDigit(time_.tm_min, 0);
-	singleDigitArray[3] = NixieHv5622::getDigit(time_.tm_min, 1);
-	singleDigitArray[4] = NixieHv5622::getDigit(time_.tm_hour, 0);
-	singleDigitArray[5] = NixieHv5622::getDigit(time_.tm_hour, 1);
-	//ESP_LOGE(TAG, "The Array of Single digits ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", singleDigitArray[5],singleDigitArray[4],singleDigitArray[3],singleDigitArray[2],singleDigitArray[1],singleDigitArray[0]);
-
-	// next, we get the bit matching the digit-number: 1 = 0000 0000 0000 0001, 9 = 0000 0001 0000 0000 and so on
-	for (int i = 0; i < nrOfDigits; i++)
-	{
-		bitArray[i] = NixieHv5622::getDigitBits(singleDigitArray[i]);
-	}
-	// ESP_LOGE(TAG, "The Array of Bits in Order ([5][4][3][2][1][0]): %i,%i,%i,%i,%i,%i", bitArray[5],bitArray[4],bitArray[3],bitArray[2],bitArray[1],bitArray[0]);
-
-	// next we build up the bits-sequence, mapping every 10 bits of each digit together to a 64bits representation
-	uint64_t sequence = NixieHv5622::get64BitSequence(bitArray, 6, 10, 0);
-	// ESP_LOGE(TAG, "The Sequence looks like this: %llu", sequence);
-
-	// next, I think because our chip is little endian, we need to swap every bit of each single byte
-	// so that the bits are in fact written how ea actually want them to arrive at the serial-parallel converter
-	
-	uint64_t sequenceManipulated = sequence << 4; 
-	
-	uint64_t sequenceManipulated2 = NixieHv5622::reverseBitsOf8Bytes(sequenceManipulated);
-
-	ESP_LOGE(TAG, "6 digit Sequence ss:mm:hh: %llu, shifted by 4bits: %llu, corrected2BigEndian: %llu", sequence, sequenceManipulated, sequenceManipulated2);
-	
-	// ESP_LOGE(TAG, "The Reversed Sequence looks like this: %llu", sequenceManipulated);
-
-
-	//sequenceManipulated2 = 
-	
-	//ESP_LOGE(TAG, "original: 0x%llx, reversed: 0x%llx", sequenceManipulated, sequenceManipulated2);
-	return sequenceManipulated2;
-	//return sequence;
-}
 
 uint8_t NixieHv5622::reverse8Bits(uint8_t b)
 {

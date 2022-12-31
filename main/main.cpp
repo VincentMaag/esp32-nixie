@@ -120,7 +120,7 @@ extern "C" void app_main()
     nixieTime.setLocalTimeOffset(1 * 3600);
     // start a synchronisation task that will try and synch esp-time to ds3231 time, in seconds
 
-    nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 10 * 1000, 1);
+    //nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 10 * 1000, 1);
 
     /* Notes:
         - use nixieTime.getEspTime(ESP_TIME_LOCAL) for getting time. Although ESP_TIME_GMT gives the same value
@@ -150,10 +150,10 @@ extern "C" void app_main()
         fuckyouTest.tm_hour = 11;
         
 
-        //hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
-        hv5622.writeTimeToHv5622(fuckyouTest);
+        hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        //hv5622.writeTimeToHv5622(fuckyouTest);
 
-        //nixieTime.logTimes();
+        nixieTime.logTimes();
         // ESP_LOGI(TAG, "Setting esp to 0 and syncronizing ds3231");
 
         // struct tm tm_ = {};
