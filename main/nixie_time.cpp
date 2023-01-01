@@ -20,11 +20,10 @@ NixieTime *NixieTime::m_staticThis;
 NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231(ds3231_)
 {
 	ESP_LOGW(TAG, "NixieTime Instance created");
-	// lol, set our non-static this pointer to a static one, so that we can use it in a static callback
-	// function that is handled in another class-instance ;)
+	// Set our non-static "this" pointer to a static one, so that we can use it in a static callback function. This
+	// is needed because we want to manipulate class-instance stuff in the callback functions
 	NixieTime::pointToThisInstance();
 	// initialize sntp with our custom static callback and start sntp service
-	// m_sntp.setSynchInterval(60000); // lets set this one outside of nixieTime!
 	m_sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
 	m_sntp.initStart();
 	// set timezone
@@ -219,7 +218,6 @@ void NixieTime::nixie_time_task(void *pArgs)
 void NixieTime::nixieTimeSNTPSyncNotificationCb(struct timeval *tv)
 {
 	// sntp has thrown callback for a time synch event
-
 	ESP_LOGW(TAG, "Notification of a time synchronization event. The current date/times are: LOCAL %s, GMT %s", m_staticThis->getEspTimeAsString(ESP_TIME_LOCAL), m_staticThis->getEspTimeAsString(ESP_TIME_GMT));
 	// ok, now lets synchronize ds3231 with esp time because we now have the correct time!
 	m_staticThis->synchTime(NIXIE_TIME_ESP_AS_MASTER);

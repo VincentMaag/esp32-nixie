@@ -92,7 +92,7 @@ public:
     time_t getTimeDifference();
     // check time difference, synchronize all if difference larger than argument in s
     esp_err_t synchTimeIfDiffLargerThan(time_t allowedTimeDiff_, nixie_time_master_t master_);
-    // create a Task that polls clock difference every x seconds and sets synchronizes times if difference larger tan argment
+    // create a Task that polls clock difference every x seconds and synchronizes times if difference larger tan argument
     esp_err_t createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_);   
     // get and log esp and ds3231 times in terminal
     void logTimes();
