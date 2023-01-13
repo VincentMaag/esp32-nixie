@@ -13,5 +13,4 @@
 
 
 
-
 #endif /* __NIXIE_PROJDEFS_H__ */

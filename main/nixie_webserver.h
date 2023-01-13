@@ -7,6 +7,7 @@
 
 
 #include "maag_webserver.h"
+#include "nixie_time.h"
 
 // data structure for nixie webserver data
 typedef struct{
@@ -23,9 +24,20 @@ private:
     // User data for nixie webserver
     nixie_webserver_data_t m_data;
 
+    
+    
+
 public:
-    // set nixie http_server here
+    // set nixie http_server here via constructor
     NixieWebserver();
+
+    //
+    NixieTime* m_pNixieTime;
+
+    // pass parameters to nixie webserver
+    void passWebseverParams(NixieTime* nixieTime_){
+        m_pNixieTime = nixieTime_;
+    }
 
     // get all data
     nixie_webserver_data_t getdata(){

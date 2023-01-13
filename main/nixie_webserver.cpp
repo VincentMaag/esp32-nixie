@@ -20,7 +20,10 @@
 #include "lwip/sys.h"
 #include "lwip/api.h"
 
+#include "nixie_projdefs.h"
+
 #include "nixie_webserver.h"
+
 
 // static TAG
 static const char *TAG = "nixie_webserver";
@@ -74,11 +77,6 @@ void NixieWebserver::nixie_http_serve(struct netconn *conn, void *pArgs)
 	extern const uint8_t test_js_end[] asm("_binary_index_js_end");
 	const uint32_t test_js_len = test_js_end - test_js_start;
 
-	// Chart.js
-	// extern const uint8_t Chart_js_start[] asm("_binary_Chart_js_start");
-	// extern const uint8_t Chart_js_end[] asm("_binary_Chart_js_end");
-	// const uint32_t Chart_js_len = Chart_js_end - Chart_js_start;
-
 	// index.css
 	extern const uint8_t index_css_start[] asm("_binary_index_css_start");
 	extern const uint8_t index_css_end[] asm("_binary_index_css_end");
@@ -115,16 +113,6 @@ void NixieWebserver::nixie_http_serve(struct netconn *conn, void *pArgs)
 				netconn_delete(conn);
 				netbuf_delete(inbuf);
 			}
-			// else if (strstr(buf, "GET /Chart.js "))
-			// {
-			// 	ESP_LOGI(TAG2, "Sending /Chart.js");
-			// 	netconn_write(conn, JS_HEADER, sizeof(JS_HEADER) - 1, NETCONN_NOCOPY);
-			// 	netconn_write(conn, Chart_js_start, Chart_js_len, NETCONN_NOCOPY);
-			// 	netconn_close(conn);
-			// 	netconn_delete(conn);
-			// 	netbuf_delete(inbuf);
-			// 	ESP_LOGI(TAG2, "Sent Chart.js and closed connection");
-			// }
 			else if (strstr(buf, "GET /index.css "))
 			{
 				ESP_LOGI(TAG2, "Sending /index.css");
@@ -142,6 +130,36 @@ void NixieWebserver::nixie_http_serve(struct netconn *conn, void *pArgs)
 				netconn_delete(conn);
 				netbuf_delete(inbuf);
 			}
+			// =========================================================================
+			// 
+			else if (strstr(buf, "GET /getEspTime"))
+			{
+				ESP_LOGW(TAG2, "Requesting Esp time /");
+				//
+				
+				const char* outbuf = pNixieWebserver->m_pNixieTime->getEspTimeAsString(ESP_TIME_LOCAL);
+
+				ESP_LOGW(TAG2, "Sending: %s, size is: %i",outbuf, strlen(outbuf));
+
+				netconn_write(conn, outbuf, strlen(outbuf), NETCONN_NOCOPY);
+				//
+				netconn_close(conn);
+				netconn_delete(conn);
+				netbuf_delete(inbuf);
+			}
+			// =========================================================================
+			// 
+			else if (strstr(buf, "GET /getSomething"))
+			{
+				ESP_LOGW(TAG2, "Requesting CONSOLE TEST! /");
+				//
+				netconn_write(conn, HTML_HEADER, sizeof(HTML_HEADER) - 1, NETCONN_NOCOPY);
+				//
+				netconn_close(conn);
+				netconn_delete(conn);
+				netbuf_delete(inbuf);
+			}
+			// =========================================================================
 			else
 			{
 				ESP_LOGI(TAG2, "Unknown request");

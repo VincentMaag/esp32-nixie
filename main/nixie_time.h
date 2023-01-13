@@ -34,10 +34,6 @@ private:
     MaagSNTP &m_sntp;
     // reference to our ds3231 objetc, with which we can get our RTC time
     DS3231 &m_ds3231;
-    // current esp system time (GMT)
-    struct tm m_espTime = {};
-    // current local esp system time (defined by timezone)
-    struct tm m_espLocalTime = {};
     //
     char m_strftime_buf_esp[2][64] = {{}, {'\0'}};
     // current ds3231 time
@@ -96,8 +92,6 @@ public:
     esp_err_t createSynchTask(time_t synchTaskAllowedTimeDiff_, nixie_time_master_t synchTaskMaster_, TickType_t synchTaskticksToDelay_, BaseType_t xCoreID_);   
     // get and log esp and ds3231 times in terminal
     void logTimes();
-    // set local time offset to gmt time
-    esp_err_t setLocalTimeOffset(int offset_);
 };
 
 #endif /* __NIXIE_TIME_H__ */

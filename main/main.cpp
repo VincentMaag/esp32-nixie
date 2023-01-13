@@ -3,14 +3,12 @@
     - Webserver:
 
     - NixieTime:
-        (- get the timezone working correctly...)
-        - put sntp instance into NixieTime class
-        - make a nixieTime::function to initialize and start sntp service
+        - get the timezone working correctly...
         - make a nixieTime::function to stop sntp service
         - make a nixieTime::function to set esp time manually. When doing this, set ds3231 time accordingly.
             --> to manualy set time: get it as struct, get current local time, change s, min, hour etc., the try and set with settimeofday
         - if spi slave is not here, then do not synch esp-time with spi slave, rather just synch via sntp and leave time as it is
-        - start sntp service in a seperate function so that ios clear what is done (not in the constructor of nixie-time...)
+        - start sntp service in a seperate function so that its clear what is done (not in the constructor of nixie-time...)
 
     - create a MainStateMachine.cpp and create a while 1 loop. Create framework for some stuff
         - try to pass wifi, webserver objects to MainStateMachine as pointers (or reference) so that MainStateMachine has access to all objetcs
@@ -72,8 +70,6 @@ extern "C" void app_main()
     // not sure why i added next lines...
     // ESP_LOGI(TAG, "Initializing netif");
     // ESP_ERROR_CHECK(esp_netif_init());
-    // ESP_LOGI(TAG, "Initializing event loop");
-    // ESP_ERROR_CHECK( esp_event_loop_create_default() );
     // =====================================================================
     // Wifi object
     MaagWifi wifi;
@@ -82,25 +78,15 @@ extern "C" void app_main()
     wifi.setDNS("8.8.8.8");
     wifi.setSSID("FRITZ!Box 7583 AE 2.4 Ghz");
     wifi.setPW("72176317897889201379");
-    // maagWifi.init_ap();
+    // wifi.setSSID("Nixie AP");
+    // wifi.setPW("ScheissEgalEh");
+    //wifi.init_ap();
+
     wifi.init_sta();
     wifi.createSTAAutoConnectTask(5000, 0);
+    
     // =====================================================================
-    // webserver object
-    //
-    // NixieWebserver webserver;  // create webserver object
-    // webserver.createServer(0); // start webserver --> create freRtos tasks
-    //
-    // =====================================================================
-    // GPIO's --> just testcode
-    //
-    // GpioInput gpioIn(GPIO_NUM_14, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE);
-    // GpioOutput gpioOut(GPIO_NUM_5, GPIO_PULLDOWN_ENABLE, GPIO_PULLUP_DISABLE);
-    // gpioOut.setOutput(true);
-    // gpio2.setOutput(true);
-    //
-    // =====================================================================
-    // DS3231 RTC (external clock)
+    // DS3231 (RTC - external clock)
     //
     // creat a i2c port
     MaagI2CPort i2c;
@@ -121,22 +107,22 @@ extern "C" void app_main()
     //
     // create nixie time instance and pass sntp & ds3231 objects as reference. Start sntp service
     NixieTime nixieTime(sntp, ds3231);
-    // offset to GMT, because timezones arn't working correctly yet
-    nixieTime.setLocalTimeOffset(1 * 3600);
+
+    //NixieTime* nixieTime = new NixieTime(sntp, ds3231);
+
     // start a synchronisation task that will try and synch esp-time to ds3231 time
+
+    nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 5 * 1000, 1);
     
-    // --> commented out for now so that rtc doesn't mess up time for testing
-    // nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 10 * 1000, 1);
-    
+    // =====================================================================
+    // webserver object
     //
-    /* Notes:
-        - use nixieTime.getEspTime(ESP_TIME_LOCAL) for getting time. Although ESP_TIME_GMT gives the same value
-        after we se a timezone. I honestly have no idea why they are the same. But who cares. Synchronizing between
-        esp and ds3231 is done in GMT time. Somehow it works, do not ask me how.
-    */
+    NixieWebserver webserver;  // create webserver object
+    webserver.createServer(0); // start webserver --> create freRtos tasks    
+    webserver.passWebseverParams(&nixieTime);
     //
     // =====================================================================
-    // SPI --> writing stuff to nixie tubes
+    // SPI ( HV5622 - writing stuff to nixie tubes)
     // 
     // create a spi host with miso, mosi (i.e. data), clk
     MaagSpiHost spi;
@@ -148,18 +134,20 @@ extern "C" void app_main()
     // initialize gpios needed for blanking and polarity
     hv5622.initGpios(GPIO_NUM_16, GPIO_NUM_17);
 
-
+    
 
     // TickType_t previousWakeTime = xTaskGetTickCount();
     while (true)
     {     
-        // temporarily write time every x seconds here in main. Will be handled in a nixieTime task in future
-        hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
-        // log times to console
-        nixieTime.logTimes();
 
         
-        ESP_LOGI(TAG, "Main Looping");
+        // temporarily write time every x seconds here in main. Will be handled in a nixieTime task in future
+        //hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        // log times to console
+        nixieTime.logTimes();
+        
+        
+        //ESP_LOGI(TAG, "Main Looping");
         // xTaskDelayUntil(&previousWakeTime,(1000 / portTICK_PERIOD_MS));
         vTaskDelay((1000 / portTICK_PERIOD_MS));
     }
