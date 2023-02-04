@@ -66,7 +66,6 @@ extern "C" void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
     // not sure why i added next lines...
     // ESP_LOGI(TAG, "Initializing netif");
     // ESP_ERROR_CHECK(esp_netif_init());
@@ -81,10 +80,8 @@ extern "C" void app_main()
     // wifi.setSSID("Nixie AP");
     // wifi.setPW("ScheissEgalEh");
     //wifi.init_ap();
-
     wifi.init_sta();
     wifi.createSTAAutoConnectTask(5000, 0);
-    
     // =====================================================================
     // DS3231 (RTC - external clock)
     //
@@ -93,47 +90,42 @@ extern "C" void app_main()
     i2c.initPort(I2C_NUM_0, GPIO_NUM_21, GPIO_NUM_22, I2C_MODE_MASTER);
     // create DS3231 i2c device and hook to port. ds3231 is handled in nixieTime class instance
     DS3231 ds3231(i2c.getPort());
-    //
     // =====================================================================
     // SNTP (online clock)
     //
-    // create sntp instance but don't start it yet. It will be started in nixieTime class instance
     MaagSNTP sntp;
-    // set the sntp synch interval here in minutes
     sntp.setSynchInterval(1 * 60 * 1000);
-    //
+    // initialize sntp with our custom static callback and start sntp service. The callbalck func is static,
+    // so we are allowed to set it here, even before we create an instance of nixieTime
+	sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
+	sntp.initStart();
     // =====================================================================
     // NIXIE TIME (main functionality)
     //
-    // create nixie time instance and pass sntp & ds3231 objects as reference. Start sntp service
-    NixieTime nixieTime(sntp, ds3231);
-
-    //NixieTime* nixieTime = new NixieTime(sntp, ds3231);
-
+    // create our synch-object that will synchronize esp-, sntp- and rtc-times
+    NixieTime nixieTime(ds3231);
     // start a synchronisation task that will try and synch esp-time to ds3231 time
-
-    nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 5 * 1000, 1);
-    
+    //nixieTime.createSynchTask(1, NIXIE_TIME_DS3231_AS_MASTER, 5 * 1000, 1);
+    nixieTime.createSynchTask(1, NIXIE_TIME_ESP_AS_MASTER, 5 * 1000, 1);
     // =====================================================================
-    // webserver object
+    // Webserver
     //
     NixieWebserver webserver;  // create webserver object
     webserver.createServer(0); // start webserver --> create freRtos tasks    
     webserver.passWebseverParams(&nixieTime);
-    //
     // =====================================================================
     // SPI ( HV5622 - writing stuff to nixie tubes)
     // 
-    // create a spi host with miso, mosi (i.e. data), clk
     MaagSpiHost spi;
     spi.initHost(SPI2_HOST, GPIO_NUM_19, GPIO_NUM_23, GPIO_NUM_18);
-    // create an hv5622 spi device
-    NixieHv5622 hv5622;
-    // init the device and connect to a host. Set clk frequency and "latch" pin. Use spi mode 1 here
-    hv5622.initDevice(spi.getHostDevice(), 10000, 1, GPIO_NUM_4);
-    // initialize gpios needed for blanking and polarity
-    hv5622.initGpios(GPIO_NUM_16, GPIO_NUM_17);
-
+    // spi-device for time (hh:mm:ss)
+    NixieHv5622 hv5622_time;
+    hv5622_time.initDevice(spi.getHostDevice(), 10000, 1, GPIO_NUM_4);
+    hv5622_time.initGpios(GPIO_NUM_16, GPIO_NUM_17);
+    // second spi device for date (dd:mm:yy)
+    NixieHv5622 hv5622_date;
+    hv5622_date.initDevice(spi.getHostDevice(), 10000, 1, GPIO_NUM_32);
+    hv5622_date.initGpios(GPIO_NUM_25, GPIO_NUM_26);
     
 
     // TickType_t previousWakeTime = xTaskGetTickCount();
@@ -143,6 +135,9 @@ extern "C" void app_main()
         
         // temporarily write time every x seconds here in main. Will be handled in a nixieTime task in future
         //hv5622.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        hv5622_time.writeTimeToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        hv5622_date.writeDateToHv5622(nixieTime.getEspTime(ESP_TIME_LOCAL));
+        
         // log times to console
         nixieTime.logTimes();
         
