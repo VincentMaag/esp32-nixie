@@ -31,7 +31,7 @@ class NixieTime
 private:
     // references to our sntp object, with which we can manipulate
     // our callbakc function(s) when we synch time
-    MaagSNTP &m_sntp;
+    //MaagSNTP &m_sntp;
     // reference to our ds3231 objetc, with which we can get our RTC time
     DS3231 &m_ds3231;
     //
@@ -57,8 +57,6 @@ private:
         m_staticThis = this;
     }
 
-    // our sntp callback function that will do the ds3231 synchronisation
-    static void nixieTimeSNTPSyncNotificationCb(struct timeval *tv);
     // simple getters
     time_t getSynchTaskAllowedTimeDiff(){
         return m_synchTaskAllowedTimeDiff;
@@ -71,7 +69,9 @@ private:
     }
 
 public:
-    NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_);
+    NixieTime(DS3231 &ds3231_);
+    // our sntp callback function that will do the ds3231 synchronisation
+    static void nixieTimeSNTPSyncNotificationCb(struct timeval *tv);
     // syncronize Times between esp and ds3231. <Parameter>-Source will set <other>-Source
     esp_err_t synchTime(nixie_time_master_t master_);
     // get current esp time

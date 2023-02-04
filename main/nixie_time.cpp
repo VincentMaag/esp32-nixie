@@ -19,7 +19,7 @@ NixieTime *NixieTime::m_staticThis;
 // =============================================================================================================
 // CLASS NixieTime
 // =============================================================================================================
-NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231(ds3231_)
+NixieTime::NixieTime(DS3231 &ds3231_) : m_ds3231(ds3231_)
 {
 	ESP_LOGW(TAG, "NixieTime Instance created");
 	// Set our non-static "this" pointer to a static one, so that we can use it in a static callback function. This
@@ -27,9 +27,9 @@ NixieTime::NixieTime(MaagSNTP &sntp_, DS3231 &ds3231_) : m_sntp(sntp_), m_ds3231
 	NixieTime::pointToThisInstance();
 	// set timezone
 	NixieTime::setTimeZone();
-	// initialize sntp with our custom static callback and start sntp service
-	m_sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
-	m_sntp.initStart();
+	// // initialize sntp with our custom static callback and start sntp service
+	// m_sntp.setSyncNotificationCb(NixieTime::nixieTimeSNTPSyncNotificationCb);
+	// m_sntp.initStart();
 }
 
 void NixieTime::setTimeZone()
